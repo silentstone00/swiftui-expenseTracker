@@ -13,6 +13,7 @@ struct BalanceCard: View {
     let summary: MonthlySummary
     @Environment(\.colorScheme) var colorScheme
     @State private var animateNumbers: Bool = false
+    @State private var animateCard: Bool = false
     
     // MARK: - Body
     
@@ -73,9 +74,14 @@ struct BalanceCard: View {
             )
         )
         .cornerRadius(20)
-        .shadow(color: shadowColor, radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
+        .scaleEffect(animateCard ? 1.0 : 0.95)
+        .opacity(animateCard ? 1.0 : 0.0)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                animateCard = true
+            }
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
                 animateNumbers = true
             }
         }
@@ -83,21 +89,12 @@ struct BalanceCard: View {
     
     // MARK: - Computed Properties
     
-    /// Gradient colors based on theme
+    /// Gradient colors matching Figma design (peach to teal)
     private var gradientColors: Gradient {
-        if colorScheme == .dark {
-            // Dark mode: Deep purple to blue gradient
-            return Gradient(colors: [
-                Color(red: 0.4, green: 0.2, blue: 0.6),  // Deep purple
-                Color(red: 0.2, green: 0.3, blue: 0.7)   // Deep blue
-            ])
-        } else {
-            // Light mode: Vibrant purple to pink gradient
-            return Gradient(colors: [
-                Color(red: 0.6, green: 0.3, blue: 0.9),  // Vibrant purple
-                Color(red: 0.9, green: 0.4, blue: 0.7)   // Pink
-            ])
-        }
+        return Gradient(colors: [
+            Color(red: 0.95, green: 0.85, blue: 0.75),  // Peach/beige
+            Color(red: 0.4, green: 0.8, blue: 0.75)     // Teal/cyan
+        ])
     }
     
     /// Shadow color based on theme

@@ -93,21 +93,21 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Implement UI components and views
-  - [-] 5.1 Create BalanceCard component
+  - [x] 5.1 Create BalanceCard component
     - Implement gradient background with LinearGradient
     - Display totalIncome, totalExpenses, and balance with proper formatting
     - Add animated number counters with fade-in effect
     - Support both dark and light theme color schemes
     - _Requirements: 3.5, 4.4, 4.5, 6.4_
 
-  - [~] 5.2 Create HomeView
+  - [x] 5.2 Create HomeView
     - Display BalanceCard with monthly summary
     - Show recent transactions list (last 5-10)
     - Add quick action button to navigate to add transaction
     - Implement pull-to-refresh for data reload
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.1_
 
-  - [~] 5.3 Create TransactionListView
+  - [x] 5.3 Create TransactionListView
     - Display scrollable list of all transactions
     - Group transactions by date (Today, Yesterday, This Week, etc.)
     - Implement category filter chips at top
@@ -115,7 +115,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Show empty state when no transactions exist
     - _Requirements: 1.5, 2.4, 9.1, 9.3_
 
-  - [~] 5.4 Create AddTransactionView
+  - [x] 5.4 Create AddTransactionView
     - Implement form with amount TextField (numeric keyboard)
     - Add transaction type toggle (Income/Expense) with Picker
     - Add category picker with icons and colors
@@ -133,7 +133,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - _Requirements: 1.3, 1.4, 7.1, 9.1, 9.2_
 
 - [ ] 6. Implement navigation and tab structure
-  - [~] 6.1 Create TabView with bottom navigation
+  - [x] 6.1 Create TabView with bottom navigation
     - Add Home tab with SF Symbol "house.fill"
     - Add Transactions tab with SF Symbol "list.bullet"
     - Add Add Transaction tab with SF Symbol "plus.circle.fill"
@@ -148,13 +148,13 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - _Requirements: 5.2, 5.3, 5.4_
 
 - [ ] 7. Implement animations and micro-interactions
-  - [~] 7.1 Add screen transition animations
+  - [x] 7.1 Add screen transition animations
     - Implement slide transitions with 200-400ms duration
     - Add fade-in animations for BalanceCard appearance
     - Animate transaction list items on appear
     - _Requirements: 6.1, 6.4_
 
-  - [~] 7.2 Add interaction feedback animations
+  - [x] 7.2 Add interaction feedback animations
     - Implement scale animation on button taps
     - Add opacity feedback on card taps
     - Animate success confirmation after adding transaction
@@ -192,7 +192,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Display "Note cannot exceed 200 characters" for long notes
     - _Requirements: 1.3, 1.4_
 
-  - [~] 9.2 Add empty state views
+  - [x] 9.2 Add empty state views
     - Create empty state for no transactions with illustration and CTA
     - Create empty state for no filtered results
     - Create empty state for monthly summary with zero values
