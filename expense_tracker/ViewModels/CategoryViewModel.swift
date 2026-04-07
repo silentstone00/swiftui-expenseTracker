@@ -13,7 +13,7 @@ import Combine
 class CategoryViewModel: ObservableObject {
     // MARK: - Published Properties
     
-    @Published var categories: [Category] = []
+    @Published var categories: [Category] = Category.predefined
     @Published var customCategories: [Category] = []
     
     // MARK: - Private Properties

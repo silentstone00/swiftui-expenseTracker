@@ -10,11 +10,12 @@ import SwiftUI
 struct MainTabView: View {
     // MARK: - State
     
+    @EnvironmentObject private var appState: AppState
     @State private var selectedTab: Int = 0
     @State private var showAddTransaction: Bool = false
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Home Tab
@@ -23,14 +24,14 @@ struct MainTabView: View {
                     Label("Home", systemImage: "house.fill")
                 }
                 .tag(0)
-            
+
             // Balance Tab (Transactions + Stats)
             BalanceView()
                 .tabItem {
                     Label("Balance", systemImage: "chart.line.uptrend.xyaxis")
                 }
                 .tag(1)
-            
+
             // Profile Tab
             ProfileView()
                 .tabItem {
@@ -38,23 +39,24 @@ struct MainTabView: View {
                 }
                 .tag(2)
         }
-        .accentColor(Color(red: 0.4, green: 0.8, blue: 0.75))
+        .accentColor(Color.accentColor)
         .overlay(alignment: .bottomTrailing) {
-            // Glass prominent tiny button with cyan tint (iOS 17+)
-            Button(action: {
+            Button {
                 showAddTransaction = true
-            }) {
+            } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .semibold))
                     .frame(width: 50, height: 50)
             }
             .buttonStyle(.glassProminent)
-            .tint(.cyan)
+            .tint(.accentColor)
             .buttonBorderShape(.circle)
             .controlSize(.small)
-            .shadow(color: Color.cyan.opacity(0.1), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.accentColor.opacity(0.1), radius: 10, x: 0, y: 5)
             .padding(.trailing, 20)
             .padding(.bottom, 90)
+            .opacity(appState.showFAB && selectedTab != 2 ? 1 : 0)
+            .allowsHitTesting(appState.showFAB && selectedTab != 2)
         }
         .sheet(isPresented: $showAddTransaction) {
             AddTransactionView()

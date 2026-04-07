@@ -6,6 +6,11 @@
 //
 
 import SwiftUI
+import Combine
+
+class AppState: ObservableObject {
+    @Published var showFAB: Bool = true
+}
 
 @main
 struct expense_trackerApp: App {
@@ -16,6 +21,7 @@ struct expense_trackerApp: App {
     @StateObject private var transactionViewModel = TransactionViewModel()
     @StateObject private var categoryViewModel = CategoryViewModel()
     @StateObject private var themeViewModel = ThemeViewModel()
+    @StateObject private var appState = AppState()
     
     var body: some Scene {
         WindowGroup {
@@ -24,6 +30,7 @@ struct expense_trackerApp: App {
                 .environmentObject(transactionViewModel)
                 .environmentObject(categoryViewModel)
                 .environmentObject(themeViewModel)
+                .environmentObject(appState)
                 .task {
                     // Load data on app launch
                     await transactionViewModel.loadTransactions()

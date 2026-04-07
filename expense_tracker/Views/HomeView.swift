@@ -12,20 +12,16 @@ struct HomeView: View {
     
     @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var isRefreshing = false
-    @State private var showAddTransaction = false
     @State private var transactionToEdit: Transaction?
-    @State private var showEditSheet = false
-    @State private var showAllTransactions = false
-    
     // MARK: - Body
-    
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Dark background
                 Color(red: 0.05, green: 0.05, blue: 0.05)
                     .ignoresSafeArea()
-                
+
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 28) {
                         // Balance Card
@@ -34,7 +30,7 @@ struct HomeView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
                         }
-                        
+
                         // Recent Transactions Section
                         recentTransactionsSection
                     }
@@ -44,17 +40,10 @@ struct HomeView: View {
                     await refreshData()
                 }
             }
-            .navigationTitle("Dashboard")
+            .navigationTitle("Dashboard \(moodEmoji)")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showEditSheet) {
-                if let transaction = transactionToEdit {
-                    EditTransactionView(transaction: transaction)
-                        .environmentObject(viewModel)
-                        .environmentObject(CategoryViewModel())
-                }
-            }
-            .sheet(isPresented: $showAllTransactions) {
-                AllTransactionsView()
+            .sheet(item: $transactionToEdit) { transaction in
+                EditTransactionView(transaction: transaction)
                     .environmentObject(viewModel)
                     .environmentObject(CategoryViewModel())
             }
@@ -74,9 +63,11 @@ struct HomeView: View {
                 Spacer()
                 
                 if !recentTransactions.isEmpty {
-                    Button(action: {
-                        showAllTransactions = true
-                    }) {
+                    NavigationLink {
+                        AllTransactionsView()
+                            .environmentObject(viewModel)
+                            .environmentObject(CategoryViewModel())
+                    } label: {
                         HStack(spacing: 4) {
                             Text("See All")
                                 .font(.subheadline)
@@ -84,7 +75,7 @@ struct HomeView: View {
                             Image(systemName: "arrow.right")
                                 .font(.caption)
                         }
-                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.75))
+                        .foregroundColor(Color.accentColor)
                     }
                 }
             }
@@ -99,7 +90,6 @@ struct HomeView: View {
                         transaction: transaction,
                         onEdit: {
                             transactionToEdit = transaction
-                            showEditSheet = true
                         },
                         onDelete: {
                             Task {
@@ -125,7 +115,20 @@ struct HomeView: View {
     // MARK: - Computed Properties
     
     private var recentTransactions: [Transaction] {
-        Array(viewModel.transactions.prefix(8))
+        Array(viewModel.transactions.prefix(5))
+    }
+
+    private var moodEmoji: String {
+        guard let summary = viewModel.monthlySummary, summary.totalIncome > 0 else { return "😐" }
+        let income  = Double(truncating: summary.totalIncome as NSNumber)
+        let balance = Double(truncating: (summary.totalIncome - summary.totalExpenses) as NSNumber)
+        let ratio   = balance / income  // what % of income is left
+
+        switch ratio {
+        case ..<0.33: return "😔"   // balance < 33% of income
+        case 0.33..<0.66: return "😐"   // balance 33–66% of income
+        default:      return "😊"   // balance > 66% of income
+        }
     }
     
     // MARK: - Methods

@@ -140,7 +140,7 @@ struct TransactionRow: View {
     }
     
     private var amountColor: Color {
-        transaction.type == .income ? .green : .red
+        transaction.type == .income ? .green.opacity(0.7) : .red.opacity(0.7)
     }
     
     private var formattedDate: String {

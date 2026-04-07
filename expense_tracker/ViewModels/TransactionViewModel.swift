@@ -168,9 +168,11 @@ class TransactionViewModel: ObservableObject {
                 totalExpenses += transaction.amount
             }
             
-            // Update category breakdown
-            let currentAmount = categoryBreakdown[transaction.category] ?? 0
-            categoryBreakdown[transaction.category] = currentAmount + transaction.amount
+            // Update category breakdown (expenses only)
+            if transaction.type == .expense {
+                let currentAmount = categoryBreakdown[transaction.category] ?? 0
+                categoryBreakdown[transaction.category] = currentAmount + transaction.amount
+            }
         }
         
         return MonthlySummary(

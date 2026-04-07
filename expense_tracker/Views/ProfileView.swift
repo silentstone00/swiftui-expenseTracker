@@ -25,12 +25,12 @@ struct ProfileView: View {
                             // Profile Avatar
                             ZStack {
                                 Circle()
-                                    .fill(Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.2))
+                                    .fill(Color.accentColor.opacity(0.2))
                                     .frame(width: 80, height: 80)
                                 
                                 Image(systemName: "person.fill")
                                     .font(.system(size: 36))
-                                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.75))
+                                    .foregroundColor(Color.accentColor)
                             }
                             
                             Text("User Profile")

@@ -171,7 +171,7 @@ struct AddTransactionView: View {
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.3), lineWidth: 1)
+                                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                                 )
                         }
                     }
@@ -410,7 +410,7 @@ struct AddTransactionView: View {
                         .progressViewStyle(.circular)
                         .tint(.white)
                 } else {
-                    Text("Save Transaction")
+                    Text("Save")
                         .fontWeight(.semibold)
                 }
             }
@@ -418,7 +418,7 @@ struct AddTransactionView: View {
             .padding()
             .background(
                 LinearGradient(
-                    colors: [Color(red: 0.4, green: 0.8, blue: 0.75), Color(red: 0.3, green: 0.7, blue: 0.65)],
+                    colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

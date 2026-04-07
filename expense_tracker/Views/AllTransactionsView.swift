@@ -8,56 +8,45 @@
 import SwiftUI
 
 struct AllTransactionsView: View {
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     @EnvironmentObject private var categoryViewModel: CategoryViewModel
+    @EnvironmentObject private var appState: AppState
     
     @State private var selectedFilter: Category?
     @State private var transactionToEdit: Transaction?
-    @State private var showEditSheet = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Dark background
-                Color(red: 0.05, green: 0.05, blue: 0.05)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Category filter chips
-                    if !categoryViewModel.categories.isEmpty {
-                        categoryFilterChips
-                            .padding(.vertical, 12)
-                    }
-                    
-                    // Transaction list or empty state
-                    if filteredTransactions.isEmpty {
-                        emptyStateView
-                    } else {
-                        transactionList
-                    }
+        ZStack {
+            Color(red: 0.05, green: 0.05, blue: 0.05)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Category filter chips
+                if !categoryViewModel.categories.isEmpty {
+                    categoryFilterChips
+                        .padding(.vertical, 12)
+                }
+
+                // Transaction list or empty state
+                if filteredTransactions.isEmpty {
+                    emptyStateView
+                } else {
+                    transactionList
                 }
             }
-            .navigationTitle("All Transactions")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.75))
-                }
-            }
-            .sheet(isPresented: $showEditSheet) {
-                if let transaction = transactionToEdit {
-                    EditTransactionView(transaction: transaction)
-                        .environmentObject(transactionViewModel)
-                        .environmentObject(categoryViewModel)
-                }
-            }
-            .task {
-                await categoryViewModel.loadCategories()
-            }
+        }
+        .navigationTitle("All Transactions")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.hidden, for: .tabBar)
+        .onAppear { appState.showFAB = false }
+        .onDisappear { appState.showFAB = true }
+        .sheet(item: $transactionToEdit) { transaction in
+            EditTransactionView(transaction: transaction)
+                .environmentObject(transactionViewModel)
+                .environmentObject(categoryViewModel)
+        }
+        .task {
+            await categoryViewModel.loadCategories()
         }
     }
     
@@ -65,7 +54,15 @@ struct AllTransactionsView: View {
     
     private var filteredTransactions: [Transaction] {
         if let selectedFilter = selectedFilter {
-            return transactionViewModel.transactions.filter { $0.category.id == selectedFilter.id }
+            // Filter by both category ID and name for better matching
+            return transactionViewModel.transactions.filter { transaction in
+                // Match by ID first (most reliable)
+                if transaction.category.id == selectedFilter.id {
+                    return true
+                }
+                // Fallback to name matching (case-insensitive)
+                return transaction.category.name.lowercased() == selectedFilter.name.lowercased()
+            }
         }
         return transactionViewModel.transactions
     }
@@ -154,7 +151,6 @@ struct AllTransactionsView: View {
                                 transaction: transaction,
                                 onEdit: {
                                     transactionToEdit = transaction
-                                    showEditSheet = true
                                 },
                                 onDelete: {
                                     Task {
@@ -208,10 +204,10 @@ struct FilterChip: View {
             .padding(.vertical, 8)
             .background(
                 isSelected
-                    ? Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.2)
+                    ? Color.accentColor.opacity(0.2)
                     : Color(red: 0.12, green: 0.12, blue: 0.12)
             )
-            .foregroundColor(isSelected ? Color(red: 0.4, green: 0.8, blue: 0.75) : .white)
+            .foregroundColor(isSelected ? Color.accentColor : .white)
             .cornerRadius(16)
         }
     }

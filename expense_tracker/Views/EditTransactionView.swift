@@ -51,15 +51,20 @@ struct EditTransactionView: View {
     }
     
     // MARK: - Initialization
-    
+
     init(transaction: Transaction) {
         self.transaction = transaction
+        _amount = State(initialValue: String(describing: transaction.amount))
+        _transactionType = State(initialValue: transaction.type)
+        _selectedCategory = State(initialValue: transaction.category)
+        _date = State(initialValue: transaction.date)
+        _note = State(initialValue: transaction.note ?? "")
     }
     
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Dark background
                 Color(red: 0.05, green: 0.05, blue: 0.05)
@@ -116,7 +121,6 @@ struct EditTransactionView: View {
             }
             .task {
                 await categoryViewModel.loadCategories()
-                loadTransactionData()
             }
         }
     }
@@ -177,7 +181,7 @@ struct EditTransactionView: View {
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.3), lineWidth: 1)
+                                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                                 )
                         }
                     }
@@ -412,7 +416,7 @@ struct EditTransactionView: View {
             .padding()
             .background(
                 LinearGradient(
-                    colors: [Color(red: 0.4, green: 0.8, blue: 0.75), Color(red: 0.3, green: 0.7, blue: 0.65)],
+                    colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -437,14 +441,6 @@ struct EditTransactionView: View {
     }
     
     // MARK: - Methods
-    
-    private func loadTransactionData() {
-        amount = String(describing: transaction.amount)
-        transactionType = transaction.type
-        selectedCategory = transaction.category
-        date = transaction.date
-        note = transaction.note ?? ""
-    }
     
     private func addQuickAmount(_ quickAmount: Decimal) {
         let currentAmount = Decimal(string: amount) ?? 0

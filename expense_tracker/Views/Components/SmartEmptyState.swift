@@ -146,7 +146,7 @@ enum EmptyStateType {
     
     var accentColor: Color {
         switch self {
-        case .noTransactions: return Color(red: 0.4, green: 0.8, blue: 0.75)
+        case .noTransactions: return Color.accentColor
         case .noFilteredTransactions: return .orange
         case .noStats: return .purple
         case .noCategories: return .blue
