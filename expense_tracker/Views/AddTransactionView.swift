@@ -14,8 +14,8 @@ struct AddTransactionView: View {
     
     // MARK: - ViewModels
     
-    @StateObject private var transactionViewModel = TransactionViewModel()
-    @StateObject private var categoryViewModel = CategoryViewModel()
+    @EnvironmentObject private var transactionViewModel: TransactionViewModel
+    @EnvironmentObject private var categoryViewModel: CategoryViewModel
     
     // MARK: - Form State
     
@@ -86,8 +86,6 @@ struct AddTransactionView: View {
             }
             .navigationTitle("Add Transaction")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(red: 0.05, green: 0.05, blue: 0.05), for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -296,14 +294,14 @@ struct AddTransactionView: View {
                     .foregroundColor(note.count > noteCharacterLimit ? .red : .gray)
             }
             
-            TextField("Add a note...", text: $note, axis: .vertical)
-                .lineLimit(3...5)
+            TextField("Add a note...", text: $note)
+                .lineLimit(3)
                 .focused($focusedField, equals: .note)
                 .padding()
                 .background(Color(red: 0.12, green: 0.12, blue: 0.12))
                 .cornerRadius(12)
                 .foregroundColor(.white)
-                .onChange(of: note) { oldValue, newValue in
+                .onChange(of: note) { newValue in
                     // Enforce character limit
                     if newValue.count > noteCharacterLimit {
                         note = String(newValue.prefix(noteCharacterLimit))

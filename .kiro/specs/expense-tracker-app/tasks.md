@@ -167,7 +167,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - _Requirements: 6.2, 6.3_
 
 - [ ] 8. Implement data persistence operations
-  - [~] 8.1 Wire DataManager to ViewModels
+  - [x] 8.1 Wire DataManager to ViewModels
     - Connect TransactionViewModel to DataManager for CRUD operations
     - Connect CategoryViewModel to DataManager for category persistence
     - Implement immediate save on transaction add/update/delete
@@ -185,7 +185,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - _Requirements: 8.1, 8.2, 8.4, 3.4, 4.3_
 
 - [ ] 9. Implement error handling and empty states
-  - [~] 9.1 Add validation error messages
+  - [x] 9.1 Add validation error messages
     - Display "Amount must be greater than zero" for invalid amounts
     - Display "Please select a category" when category missing
     - Display "Date cannot be in the future" for future dates
@@ -198,7 +198,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Create empty state for monthly summary with zero values
     - _Requirements: 9.1, 9.2, 9.3_
 
-  - [~] 9.3 Add Core Data error handling
+  - [x] 9.3 Add Core Data error handling
     - Implement try-catch for save operations with user-friendly messages
     - Implement try-catch for fetch operations with retry mechanism
     - Log errors for debugging without exposing to user
@@ -207,8 +207,8 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
 - [ ] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Polish UI and accessibility
-  - [~] 11.1 Implement theme support
+- [x] 11. Polish UI and accessibility
+  - [x] 11.1 Implement theme support
     - Apply consistent color schemes for dark and light modes
     - Update gradient colors based on theme
     - Ensure text contrast meets accessibility standards
@@ -222,7 +222,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Test with VoiceOver enabled
     - _Requirements: 4.5_
 
-  - [~] 11.3 Add app icon and launch screen
+  - [x] 11.3 Add app icon and launch screen
     - Create app icon asset in multiple sizes
     - Design launch screen matching app theme
     - _Requirements: 10.4_
@@ -242,7 +242,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Verify test coverage meets goals (>80% for ViewModels)
     - _Requirements: All_
 
-  - [~] 12.3 Build for TestFlight deployment
+  - [x] 12.3 Build for TestFlight deployment
     - Configure build settings for iOS 15.0+ support
     - Archive build for distribution
     - Upload to TestFlight for beta testing

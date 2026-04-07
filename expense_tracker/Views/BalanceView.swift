@@ -1,42 +1,71 @@
 //
-//  TransactionListView.swift
+//  BalanceView.swift
 //  expense_tracker
 //
-//  View displaying scrollable list of transactions with grouping and filtering
+//  Balance view with transactions list and statistics
 //
 
 import SwiftUI
 
-struct TransactionListView: View {
+struct BalanceView: View {
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     @EnvironmentObject private var categoryViewModel: CategoryViewModel
     
     @State private var selectedFilter: Category?
+    @State private var selectedSegment: Int = 0 // 0 = Transactions, 1 = Stats
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Dark background matching Figma
+                // Dark background
                 Color(red: 0.05, green: 0.05, blue: 0.05)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Category filter chips
-                    if !categoryViewModel.categories.isEmpty {
-                        categoryFilterChips
-                            .padding(.vertical, 8)
+                    // Segmented Control
+                    Picker("View", selection: $selectedSegment) {
+                        Text("Transactions").tag(0)
+                        Text("Statistics").tag(1)
                     }
+                    .pickerStyle(.segmented)
+                    .padding()
                     
-                    // Transaction list or empty state
-                    if filteredTransactions.isEmpty {
-                        emptyStateView
+                    // Content based on selection
+                    if selectedSegment == 0 {
+                        transactionsContent
                     } else {
-                        transactionList
+                        statsContent
                     }
                 }
             }
-            .navigationTitle("Transactions")
+            .navigationTitle("Balance")
+            .navigationBarTitleDisplayMode(.large)
         }
+    }
+    
+    // MARK: - Transactions Content
+    
+    private var transactionsContent: some View {
+        VStack(spacing: 0) {
+            // Category filter chips
+            if !categoryViewModel.categories.isEmpty {
+                categoryFilterChips
+                    .padding(.vertical, 8)
+            }
+            
+            // Transaction list or empty state
+            if filteredTransactions.isEmpty {
+                emptyStateView
+            } else {
+                transactionList
+            }
+        }
+    }
+    
+    // MARK: - Stats Content
+    
+    private var statsContent: some View {
+        StatsView()
     }
     
     // MARK: - Computed Properties
@@ -52,7 +81,6 @@ struct TransactionListView: View {
         let calendar = Calendar.current
         let now = Date()
         
-        // Group transactions by date
         let grouped = Dictionary(grouping: filteredTransactions) { transaction -> String in
             if calendar.isDateInToday(transaction.date) {
                 return "Today"
@@ -69,7 +97,6 @@ struct TransactionListView: View {
             }
         }
         
-        // Sort groups by most recent first
         let sortOrder = ["Today", "Yesterday", "This Week", "This Month"]
         return grouped.sorted { first, second in
             if let firstIndex = sortOrder.firstIndex(of: first.key),
@@ -82,7 +109,6 @@ struct TransactionListView: View {
             if sortOrder.contains(second.key) {
                 return false
             }
-            // For month names, compare dates
             if let firstDate = first.value.first?.date,
                let secondDate = second.value.first?.date {
                 return firstDate > secondDate
@@ -104,7 +130,6 @@ struct TransactionListView: View {
                     selectedFilter = nil
                 }
                 
-                // Category chips
                 ForEach(categoryViewModel.categories) { category in
                     FilterChip(
                         title: category.name,
@@ -133,25 +158,13 @@ struct TransactionListView: View {
                     Section {
                         ForEach(Array(group.1.sorted(by: { $0.date > $1.date }).enumerated()), id: \.element.id) { index, transaction in
                             TransactionRow(transaction: transaction)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .scale.combined(with: .opacity)
-                                ))
-                                .animation(.spring(response: 0.3, dampingFraction: 0.7).delay(Double(index) * 0.03), value: filteredTransactions.count)
+                                .padding(.horizontal)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
                                         deleteTransaction(transaction)
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }
-                                }
-                                .swipeActions(edge: .leading) {
-                                    Button {
-                                        // TODO: Navigate to edit view
-                                    } label: {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
-                                    .tint(.blue)
                                 }
                         }
                     } header: {
@@ -205,41 +218,8 @@ struct TransactionListView: View {
     }
 }
 
-// MARK: - Filter Chip Component
-
-struct FilterChip: View {
-    let title: String
-    let icon: String
-    var color: Color = .blue
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                isSelected
-                    ? Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.2)
-                    : Color(red: 0.12, green: 0.12, blue: 0.12)
-            )
-            .foregroundColor(isSelected ? Color(red: 0.4, green: 0.8, blue: 0.75) : .white)
-            .cornerRadius(16)
-        }
-    }
-}
-
-
-
 // MARK: - Preview
 
 #Preview {
-    TransactionListView()
+    BalanceView()
 }

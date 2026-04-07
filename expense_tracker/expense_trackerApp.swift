@@ -12,10 +12,23 @@ struct expense_trackerApp: App {
     // Initialize Core Data stack on app launch
     let dataManager = DataManager.shared
     
+    // Create shared ViewModels as StateObjects
+    @StateObject private var transactionViewModel = TransactionViewModel()
+    @StateObject private var categoryViewModel = CategoryViewModel()
+    @StateObject private var themeViewModel = ThemeViewModel()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, dataManager.viewContext)
+                .environmentObject(transactionViewModel)
+                .environmentObject(categoryViewModel)
+                .environmentObject(themeViewModel)
+                .task {
+                    // Load data on app launch
+                    await transactionViewModel.loadTransactions()
+                    await categoryViewModel.loadCategories()
+                }
         }
     }
 }

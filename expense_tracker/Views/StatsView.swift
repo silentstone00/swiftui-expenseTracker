@@ -11,7 +11,7 @@ import Charts
 struct StatsView: View {
     // MARK: - Properties
     
-    @StateObject private var viewModel = TransactionViewModel()
+    @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var selectedPeriod: Period = .weekly
     
     // MARK: - Period Enum
@@ -48,11 +48,6 @@ struct StatsView: View {
             }
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color(red: 0.05, green: 0.05, blue: 0.05), for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-        }
-        .task {
-            await viewModel.loadTransactions()
         }
     }
     

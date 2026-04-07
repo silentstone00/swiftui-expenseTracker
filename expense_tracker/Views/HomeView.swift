@@ -10,7 +10,7 @@ import SwiftUI
 struct HomeView: View {
     // MARK: - Properties
     
-    @StateObject private var viewModel = TransactionViewModel()
+    @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var isRefreshing = false
     
     // MARK: - Body
@@ -84,16 +84,6 @@ struct HomeView: View {
             }
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    addTransactionButton
-                }
-            }
-            .toolbarBackground(Color(red: 0.05, green: 0.05, blue: 0.05), for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-        }
-        .task {
-            await viewModel.loadTransactions()
         }
     }
     
@@ -127,17 +117,6 @@ struct HomeView: View {
         .padding(.vertical, 48)
     }
     
-    /// Quick action button to add transaction
-    private var addTransactionButton: some View {
-        Button(action: {
-            // TODO: Navigate to add transaction view
-        }) {
-            Image(systemName: "plus.circle.fill")
-                .font(.title2)
-                .foregroundColor(.accentColor)
-        }
-    }
-    
     // MARK: - Methods
     
     /// Refresh data with pull-to-refresh
@@ -148,83 +127,6 @@ struct HomeView: View {
         // Add slight delay for better UX
         try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
         isRefreshing = false
-    }
-}
-
-// MARK: - Transaction Row Component
-
-/// Individual transaction row for the list
-struct TransactionRow: View {
-    let transaction: Transaction
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Category icon
-            ZStack {
-                Circle()
-                    .fill(transaction.category.color.color.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                
-                Image(systemName: transaction.category.icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(transaction.category.color.color)
-            }
-            
-            // Transaction details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.category.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                
-                if let note = transaction.note, !note.isEmpty {
-                    Text(note)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .lineLimit(1)
-                } else {
-                    Text(formattedDate)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            Spacer()
-            
-            // Amount
-            Text(formattedAmount)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(amountColor)
-        }
-        .padding()
-        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-        .cornerRadius(16)
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 2
-        
-        let nsDecimal = transaction.amount as NSDecimalNumber
-        let amountString = formatter.string(from: nsDecimal) ?? "$0.00"
-        
-        return transaction.type == .income ? "+\(amountString)" : "-\(amountString)"
-    }
-    
-    private var amountColor: Color {
-        transaction.type == .income ? .green : .red
-    }
-    
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: transaction.date)
     }
 }
 
