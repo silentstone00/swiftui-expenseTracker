@@ -1,13 +1,13 @@
 //
-//  AddTransactionView.swift
+//  EditTransactionView.swift
 //  expense_tracker
 //
-//  Enhanced add transaction view with quick amount buttons and improved UX
+//  Edit existing transaction view
 //
 
 import SwiftUI
 
-struct AddTransactionView: View {
+struct EditTransactionView: View {
     // MARK: - Environment
     
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +16,10 @@ struct AddTransactionView: View {
     
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     @EnvironmentObject private var categoryViewModel: CategoryViewModel
+    
+    // MARK: - Transaction to Edit
+    
+    let transaction: Transaction
     
     // MARK: - Form State
     
@@ -37,13 +41,19 @@ struct AddTransactionView: View {
     
     private let noteCharacterLimit = 200
     private let quickAmounts: [Decimal] = [10, 50, 100, 500]
-    private let initialCategoryCount = 7 // Show 7 categories + More button
+    private let initialCategoryCount = 7
     
     // MARK: - Field Enum
     
     enum Field: Hashable {
         case amount
         case note
+    }
+    
+    // MARK: - Initialization
+    
+    init(transaction: Transaction) {
+        self.transaction = transaction
     }
     
     // MARK: - Body
@@ -68,7 +78,6 @@ struct AddTransactionView: View {
                         transactionTypeToggle
                             .padding(.top, 8)
                             .onChange(of: transactionType) { newType in
-                                // Clear category when switching to income
                                 if newType == .income {
                                     selectedCategory = nil
                                 }
@@ -95,7 +104,7 @@ struct AddTransactionView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Add Transaction")
+            .navigationTitle("Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -107,13 +116,13 @@ struct AddTransactionView: View {
             }
             .task {
                 await categoryViewModel.loadCategories()
+                loadTransactionData()
             }
         }
     }
     
     // MARK: - Subviews
     
-    /// Transaction type toggle with neutral styling
     private var transactionTypeToggle: some View {
         Picker("Type", selection: $transactionType) {
             Text("Expense").tag(TransactionType.expense)
@@ -122,7 +131,6 @@ struct AddTransactionView: View {
         .pickerStyle(.segmented)
     }
     
-    /// Amount section with quick buttons
     private var amountSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Amount")
@@ -130,7 +138,6 @@ struct AddTransactionView: View {
                 .fontWeight(.medium)
                 .foregroundColor(.white)
             
-            // Amount input
             HStack {
                 Text("$")
                     .font(.title2)
@@ -152,7 +159,6 @@ struct AddTransactionView: View {
                     )
             )
             
-            // Quick amount buttons (only for expenses)
             if transactionType == .expense {
                 HStack(spacing: 12) {
                     ForEach(quickAmounts, id: \.self) { quickAmount in
@@ -178,7 +184,6 @@ struct AddTransactionView: View {
                 }
             }
             
-            // Validation error
             if let error = validationErrors.first(where: { $0 == .invalidAmount }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -187,7 +192,6 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Category picker section (only for expenses)
     private var categoryPickerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Category")
@@ -232,13 +236,11 @@ struct AddTransactionView: View {
                 .cornerRadius(12)
             }
             
-            // Category picker grid (recent categories first)
             if showCategoryPicker {
                 categoryPickerGrid
                     .transition(.opacity.combined(with: .scale))
             }
             
-            // Validation error
             if let error = validationErrors.first(where: { $0 == .missingCategory }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -247,7 +249,6 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Category picker grid with limited initial display and More option
     private var categoryPickerGrid: some View {
         VStack(spacing: 12) {
             LazyVGrid(columns: [
@@ -284,7 +285,6 @@ struct AddTransactionView: View {
                     .buttonStyle(.plain)
                 }
                 
-                // More button if there are more categories
                 if !showAllCategories && sortedCategories.count > initialCategoryCount {
                     Button(action: {
                         withAnimation {
@@ -316,7 +316,6 @@ struct AddTransactionView: View {
         .cornerRadius(12)
     }
     
-    /// Categories to display based on showAllCategories state
     private var displayedCategories: [Category] {
         if showAllCategories {
             return sortedCategories
@@ -325,7 +324,6 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Date picker section with better layout
     private var datePickerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Date")
@@ -350,7 +348,6 @@ struct AddTransactionView: View {
             .background(Color(red: 0.12, green: 0.12, blue: 0.12))
             .cornerRadius(12)
             
-            // Validation error
             if let error = validationErrors.first(where: { $0 == .futureDateNotAllowed }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -359,7 +356,6 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Note input field
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -388,7 +384,6 @@ struct AddTransactionView: View {
                     }
                 }
             
-            // Validation error
             if let error = validationErrors.first(where: { $0 == .noteTooLong }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -397,11 +392,10 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Save button with neutral styling
     private var saveButton: some View {
         Button(action: {
             Task {
-                await saveTransaction()
+                await updateTransaction()
             }
         }) {
             HStack {
@@ -410,7 +404,7 @@ struct AddTransactionView: View {
                         .progressViewStyle(.circular)
                         .tint(.white)
                 } else {
-                    Text("Save Transaction")
+                    Text("Update Transaction")
                         .fontWeight(.semibold)
                 }
             }
@@ -431,7 +425,6 @@ struct AddTransactionView: View {
     
     // MARK: - Computed Properties
     
-    /// Sort categories with recent ones first
     private var sortedCategories: [Category] {
         let recentCategoryIds = transactionViewModel.transactions
             .prefix(10)
@@ -445,14 +438,20 @@ struct AddTransactionView: View {
     
     // MARK: - Methods
     
-    /// Add quick amount to current amount
+    private func loadTransactionData() {
+        amount = String(describing: transaction.amount)
+        transactionType = transaction.type
+        selectedCategory = transaction.category
+        date = transaction.date
+        note = transaction.note ?? ""
+    }
+    
     private func addQuickAmount(_ quickAmount: Decimal) {
         let currentAmount = Decimal(string: amount) ?? 0
         let newAmount = currentAmount + quickAmount
         amount = String(describing: newAmount)
     }
     
-    /// Format quick amount for display
     private func formatQuickAmount(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -460,18 +459,15 @@ struct AddTransactionView: View {
         return formatter.string(from: amount as NSNumber) ?? "0"
     }
     
-    /// Save transaction with validation
-    private func saveTransaction() async {
+    private func updateTransaction() async {
         validationErrors = []
         focusedField = nil
         
-        // Parse amount
         guard let amountDecimal = Decimal(string: amount), amountDecimal > 0 else {
             validationErrors.append(.invalidAmount)
             return
         }
         
-        // Validate category for expenses only
         if transactionType == .expense {
             guard selectedCategory != nil else {
                 validationErrors.append(.missingCategory)
@@ -479,35 +475,34 @@ struct AddTransactionView: View {
             }
         }
         
-        // Use a default category for income or the selected one for expense
         let category = transactionType == .income
             ? Category(name: "Income", icon: "dollarsign.circle.fill", color: .green)
             : selectedCategory!
         
-        // Create transaction
-        let transaction = Transaction(
+        let updatedTransaction = Transaction(
+            id: transaction.id,
             amount: amountDecimal,
             type: transactionType,
             category: category,
             date: date,
-            note: note.isEmpty ? nil : note
+            note: note.isEmpty ? nil : note,
+            createdAt: transaction.createdAt,
+            updatedAt: Date()
         )
         
-        // Validate transaction
-        let validationResult = TransactionValidator.validate(transaction)
+        let validationResult = TransactionValidator.validate(updatedTransaction)
         if !validationResult.isValid {
             validationErrors = validationResult.errors
             return
         }
         
-        // Save transaction
         isSaving = true
         
         do {
-            try await transactionViewModel.addTransaction(transaction)
+            try await transactionViewModel.updateTransaction(updatedTransaction)
             dismiss()
         } catch {
-            print("Error saving transaction: \(error)")
+            print("Error updating transaction: \(error)")
             isSaving = false
         }
     }
@@ -516,5 +511,11 @@ struct AddTransactionView: View {
 // MARK: - Preview
 
 #Preview {
-    AddTransactionView()
+    EditTransactionView(transaction: Transaction(
+        amount: 45.50,
+        type: .expense,
+        category: Category.predefined[0],
+        date: Date(),
+        note: "Lunch at cafe"
+    ))
 }

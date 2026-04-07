@@ -13,6 +13,9 @@ struct HomeView: View {
     @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var isRefreshing = false
     @State private var showAddTransaction = false
+    @State private var transactionToEdit: Transaction?
+    @State private var showEditSheet = false
+    @State private var showAllTransactions = false
     
     // MARK: - Body
     
@@ -43,6 +46,18 @@ struct HomeView: View {
             }
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showEditSheet) {
+                if let transaction = transactionToEdit {
+                    EditTransactionView(transaction: transaction)
+                        .environmentObject(viewModel)
+                        .environmentObject(CategoryViewModel())
+                }
+            }
+            .sheet(isPresented: $showAllTransactions) {
+                AllTransactionsView()
+                    .environmentObject(viewModel)
+                    .environmentObject(CategoryViewModel())
+            }
         }
     }
     
@@ -60,7 +75,7 @@ struct HomeView: View {
                 
                 if !recentTransactions.isEmpty {
                     Button(action: {
-                        // Navigate to Balance tab
+                        showAllTransactions = true
                     }) {
                         HStack(spacing: 4) {
                             Text("See All")
@@ -80,17 +95,28 @@ struct HomeView: View {
                     .frame(height: 300)
             } else {
                 ForEach(Array(recentTransactions.enumerated()), id: \.element.id) { index, transaction in
-                    TransactionRow(transaction: transaction)
-                        .padding(.horizontal, 20)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .scale.combined(with: .opacity)
-                        ))
-                        .animation(
-                            .spring(response: 0.5, dampingFraction: 0.7)
-                                .delay(Double(index) * 0.05),
-                            value: recentTransactions.count
-                        )
+                    TransactionRow(
+                        transaction: transaction,
+                        onEdit: {
+                            transactionToEdit = transaction
+                            showEditSheet = true
+                        },
+                        onDelete: {
+                            Task {
+                                try? await viewModel.deleteTransaction(transaction)
+                            }
+                        }
+                    )
+                    .padding(.horizontal, 20)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .scale.combined(with: .opacity)
+                    ))
+                    .animation(
+                        .spring(response: 0.5, dampingFraction: 0.7)
+                            .delay(Double(index) * 0.05),
+                        value: recentTransactions.count
+                    )
                 }
             }
         }
