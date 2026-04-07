@@ -16,7 +16,7 @@ struct TransactionRow: View {
             ZStack {
                 Circle()
                     .fill(transaction.category.color.color.opacity(0.2))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 48, height: 48)
                 
                 Image(systemName: transaction.category.icon)
                     .font(.system(size: 18))
@@ -53,11 +53,11 @@ struct TransactionRow: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color(red: 0.12, green: 0.12, blue: 0.12))
+                .fill(Color(red: 0.09, green: 0.09, blue: 0.09))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(red: 0.15, green: 0.15, blue: 0.15), lineWidth: 1)
+                .stroke(Color.white.opacity(0.03), lineWidth: 0.5)
         )
         .innerShadow(color: Color.white.opacity(0.15), radius: 3.5, x: 2, y: 2)
         .innerShadow(color: Color.black.opacity(0.25), radius: 3.5, x: -2, y: -2)

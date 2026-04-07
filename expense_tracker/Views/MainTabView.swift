@@ -40,18 +40,19 @@ struct MainTabView: View {
         }
         .accentColor(Color(red: 0.4, green: 0.8, blue: 0.75))
         .overlay(alignment: .bottomTrailing) {
-            // Native floating + button with teal background
+            // Glass prominent tiny button with cyan tint (iOS 17+)
             Button(action: {
                 showAddTransaction = true
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color(red: 0.4, green: 0.8, blue: 0.75))
-                    .cornerRadius(30) // Half of width/height to make it circular
-                    .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .frame(width: 50, height: 50)
             }
+            .buttonStyle(.glassProminent)
+            .tint(.cyan)
+            .buttonBorderShape(.circle)
+            .controlSize(.small)
+            .shadow(color: Color.cyan.opacity(0.1), radius: 10, x: 0, y: 5)
             .padding(.trailing, 20)
             .padding(.bottom, 90)
         }

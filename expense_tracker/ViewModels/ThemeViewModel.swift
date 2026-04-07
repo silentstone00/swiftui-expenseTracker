@@ -13,15 +13,24 @@ import Combine
 class ThemeViewModel: ObservableObject {
     // MARK: - Published Properties
     
-    @Published var isDarkMode: Bool = false
+    @Published var isDarkMode: Bool {
+        didSet {
+            // Save preference when isDarkMode changes
+            themePreference = isDarkMode ? "dark" : "light"
+        }
+    }
     
     // MARK: - AppStorage Properties
     
-    @AppStorage("userThemePreference") private var themePreference: String = "system"
+    @AppStorage("userThemePreference") private var themePreference: String = "dark"
     
     // MARK: - Initialization
     
     init() {
+        // Initialize isDarkMode based on saved preference
+        let savedPreference = UserDefaults.standard.string(forKey: "userThemePreference") ?? "dark"
+        self.isDarkMode = (savedPreference == "dark")
+        
         // Load saved theme preference on initialization
         loadThemePreference()
     }

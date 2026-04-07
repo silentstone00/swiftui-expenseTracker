@@ -215,7 +215,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - Test all views in both themes
     - _Requirements: 4.1, 4.4, 4.5_
 
-  - [~] 11.2 Add accessibility support
+  - [ ] 11.2 Add accessibility support
     - Add VoiceOver labels to all interactive elements
     - Support Dynamic Type for text scaling
     - Ensure minimum touch target sizes (44x44 points)
@@ -228,7 +228,7 @@ This implementation plan builds a SwiftUI-based iOS expense tracker with MVVM ar
     - _Requirements: 10.4_
 
 - [ ] 12. Final integration and testing
-  - [~] 12.1 Wire all components together
+  - [ ] 12.1 Wire all components together
     - Connect all views to ViewModels with proper bindings
     - Ensure data flows correctly from Core Data through ViewModels to Views
     - Test complete user flows end-to-end

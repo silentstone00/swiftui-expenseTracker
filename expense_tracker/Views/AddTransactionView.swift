@@ -2,7 +2,7 @@
 //  AddTransactionView.swift
 //  expense_tracker
 //
-//  Form view for adding new transactions with validation
+//  Enhanced add transaction view with quick amount buttons and improved UX
 //
 
 import SwiftUI
@@ -35,6 +35,7 @@ struct AddTransactionView: View {
     // MARK: - Constants
     
     private let noteCharacterLimit = 200
+    private let quickAmounts: [Decimal] = [10, 50, 100, 500]
     
     // MARK: - Field Enum
     
@@ -48,7 +49,7 @@ struct AddTransactionView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Dark background matching Figma
+                // Dark background
                 Color(red: 0.05, green: 0.05, blue: 0.05)
                     .ignoresSafeArea()
                 
@@ -64,12 +65,20 @@ struct AddTransactionView: View {
                         // Transaction Type Toggle
                         transactionTypeToggle
                             .padding(.top, 8)
+                            .onChange(of: transactionType) { newType in
+                                // Clear category when switching to income
+                                if newType == .income {
+                                    selectedCategory = nil
+                                }
+                            }
                         
-                        // Amount Field
-                        amountField
+                        // Amount Field with Quick Buttons
+                        amountSection
                         
-                        // Category Picker
-                        categoryPickerSection
+                        // Category Picker (only for expenses)
+                        if transactionType == .expense {
+                            categoryPickerSection
+                        }
                         
                         // Date Picker
                         datePickerSection
@@ -96,33 +105,31 @@ struct AddTransactionView: View {
             }
             .task {
                 await categoryViewModel.loadCategories()
-                // Set default category
-                if selectedCategory == nil {
-                    selectedCategory = categoryViewModel.categories.first
-                }
             }
         }
     }
     
     // MARK: - Subviews
     
-    /// Transaction type toggle (Income/Expense)
+    /// Transaction type toggle with color coding
     private var transactionTypeToggle: some View {
         Picker("Type", selection: $transactionType) {
             Text("Expense").tag(TransactionType.expense)
             Text("Income").tag(TransactionType.income)
         }
         .pickerStyle(.segmented)
+        .colorMultiply(transactionType == .expense ? Color.red.opacity(0.3) : Color.green.opacity(0.3))
     }
     
-    /// Amount input field with numeric keyboard
-    private var amountField: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    /// Amount section with quick buttons
+    private var amountSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Amount")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.white)
             
+            // Amount input
             HStack {
                 Text("$")
                     .font(.title2)
@@ -135,10 +142,42 @@ struct AddTransactionView: View {
                     .foregroundColor(.white)
             }
             .padding()
-            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-            .cornerRadius(12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(red: 0.12, green: 0.12, blue: 0.12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(transactionType == .expense ? Color.red.opacity(0.3) : Color.green.opacity(0.3), lineWidth: 1)
+                    )
+            )
             
-            // Validation error for amount
+            // Quick amount buttons (only for expenses)
+            if transactionType == .expense {
+                HStack(spacing: 12) {
+                    ForEach(quickAmounts, id: \.self) { quickAmount in
+                        Button(action: {
+                            addQuickAmount(quickAmount)
+                        }) {
+                            Text("+$\(formatQuickAmount(quickAmount))")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+            }
+            
+            // Validation error
             if let error = validationErrors.first(where: { $0 == .invalidAmount }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -147,7 +186,7 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Category picker section
+    /// Category picker section (only for expenses)
     private var categoryPickerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Category")
@@ -161,7 +200,6 @@ struct AddTransactionView: View {
             }) {
                 HStack {
                     if let category = selectedCategory {
-                        // Selected category display
                         HStack(spacing: 12) {
                             ZStack {
                                 Circle()
@@ -193,13 +231,13 @@ struct AddTransactionView: View {
                 .cornerRadius(12)
             }
             
-            // Category picker grid
+            // Category picker grid (recent categories first)
             if showCategoryPicker {
                 categoryPickerGrid
                     .transition(.opacity.combined(with: .scale))
             }
             
-            // Validation error for category
+            // Validation error
             if let error = validationErrors.first(where: { $0 == .missingCategory }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -208,7 +246,7 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Category picker grid with icons and colors
+    /// Category picker grid with recent categories first
     private var categoryPickerGrid: some View {
         LazyVGrid(columns: [
             GridItem(.flexible()),
@@ -216,7 +254,7 @@ struct AddTransactionView: View {
             GridItem(.flexible()),
             GridItem(.flexible())
         ], spacing: 16) {
-            ForEach(categoryViewModel.categories) { category in
+            ForEach(sortedCategories) { category in
                 Button(action: {
                     selectedCategory = category
                     withAnimation {
@@ -269,7 +307,7 @@ struct AddTransactionView: View {
             .cornerRadius(12)
             .colorScheme(.dark)
             
-            // Validation error for date
+            // Validation error
             if let error = validationErrors.first(where: { $0 == .futureDateNotAllowed }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -278,7 +316,7 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Note input field with character limit
+    /// Note input field
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -302,13 +340,12 @@ struct AddTransactionView: View {
                 .cornerRadius(12)
                 .foregroundColor(.white)
                 .onChange(of: note) { newValue in
-                    // Enforce character limit
                     if newValue.count > noteCharacterLimit {
                         note = String(newValue.prefix(noteCharacterLimit))
                     }
                 }
             
-            // Validation error for note
+            // Validation error
             if let error = validationErrors.first(where: { $0 == .noteTooLong }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -317,7 +354,7 @@ struct AddTransactionView: View {
         }
     }
     
-    /// Save button with validation
+    /// Save button
     private var saveButton: some View {
         Button(action: {
             Task {
@@ -328,7 +365,7 @@ struct AddTransactionView: View {
                 if isSaving {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(Color(red: 0.05, green: 0.05, blue: 0.05))
+                        .tint(.white)
                 } else {
                     Text("Save Transaction")
                         .fontWeight(.semibold)
@@ -336,21 +373,53 @@ struct AddTransactionView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(isSaving ? Color.gray : Color.white)
-            .foregroundColor(Color(red: 0.05, green: 0.05, blue: 0.05))
+            .background(
+                LinearGradient(
+                    colors: transactionType == .expense ? [.red, .red.opacity(0.8)] : [.green, .green.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .foregroundColor(.white)
             .cornerRadius(12)
         }
         .disabled(isSaving)
     }
     
+    // MARK: - Computed Properties
+    
+    /// Sort categories with recent ones first
+    private var sortedCategories: [Category] {
+        let recentCategoryIds = transactionViewModel.transactions
+            .prefix(10)
+            .map { $0.category.id }
+        
+        let recentCategories = categoryViewModel.categories.filter { recentCategoryIds.contains($0.id) }
+        let otherCategories = categoryViewModel.categories.filter { !recentCategoryIds.contains($0.id) }
+        
+        return recentCategories + otherCategories
+    }
+    
     // MARK: - Methods
+    
+    /// Add quick amount to current amount
+    private func addQuickAmount(_ quickAmount: Decimal) {
+        let currentAmount = Decimal(string: amount) ?? 0
+        let newAmount = currentAmount + quickAmount
+        amount = String(describing: newAmount)
+    }
+    
+    /// Format quick amount for display
+    private func formatQuickAmount(_ amount: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: amount as NSNumber) ?? "0"
+    }
     
     /// Save transaction with validation
     private func saveTransaction() async {
-        // Clear previous errors
         validationErrors = []
-        
-        // Dismiss keyboard
         focusedField = nil
         
         // Parse amount
@@ -359,11 +428,18 @@ struct AddTransactionView: View {
             return
         }
         
-        // Validate category
-        guard let category = selectedCategory else {
-            validationErrors.append(.missingCategory)
-            return
+        // Validate category for expenses only
+        if transactionType == .expense {
+            guard selectedCategory != nil else {
+                validationErrors.append(.missingCategory)
+                return
+            }
         }
+        
+        // Use a default category for income or the selected one for expense
+        let category = transactionType == .income
+            ? Category(name: "Income", icon: "dollarsign.circle.fill", color: .green)
+            : selectedCategory!
         
         // Create transaction
         let transaction = Transaction(
@@ -386,13 +462,9 @@ struct AddTransactionView: View {
         
         do {
             try await transactionViewModel.addTransaction(transaction)
-            
-            // Success - dismiss view
             dismiss()
         } catch {
-            // Handle error
             print("Error saving transaction: \(error)")
-            // Show error to user (could add an alert here)
             isSaving = false
         }
     }
@@ -400,8 +472,6 @@ struct AddTransactionView: View {
 
 // MARK: - Preview
 
-struct AddTransactionView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddTransactionView()
-    }
+#Preview {
+    AddTransactionView()
 }

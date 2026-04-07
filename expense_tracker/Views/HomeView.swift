@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  expense_tracker
 //
-//  Main dashboard view displaying monthly summary and recent transactions
+//  Enhanced dashboard with fintech-style layout and smart empty states
 //
 
 import SwiftUI
@@ -12,128 +12,108 @@ struct HomeView: View {
     
     @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var isRefreshing = false
+    @State private var showAddTransaction = false
     
     // MARK: - Body
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Dark background matching Figma
+                // Dark background
                 Color(red: 0.05, green: 0.05, blue: 0.05)
                     .ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Balance Card with monthly summary
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 28) {
+                        // Balance Card
                         if let summary = viewModel.monthlySummary {
                             BalanceCard(summary: summary)
-                                .padding(.horizontal)
+                                .padding(.horizontal, 20)
                                 .padding(.top, 8)
-                        } else {
-                            // Loading state or empty summary
-                            BalanceCard(summary: MonthlySummary(month: Date()))
-                                .padding(.horizontal)
-                                .padding(.top, 8)
-                                .redacted(reason: .placeholder)
                         }
                         
                         // Recent Transactions Section
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Recent Transactions")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                Spacer()
-                                
-                                if !recentTransactions.isEmpty {
-                                    Button(action: {
-                                        // TODO: Navigate to full transaction list
-                                    }) {
-                                        Text("See All")
-                                            .font(.subheadline)
-                                            .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.75))
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
-                            
-                            if recentTransactions.isEmpty {
-                                // Empty state
-                                emptyStateView
-                            } else {
-                                // Recent transactions list
-                                ForEach(Array(recentTransactions.enumerated()), id: \.element.id) { index, transaction in
-                                    TransactionRow(transaction: transaction)
-                                        .padding(.horizontal)
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                                            removal: .scale.combined(with: .opacity)
-                                        ))
-                                        .animation(.spring(response: 0.3, dampingFraction: 0.7).delay(Double(index) * 0.05), value: recentTransactions.count)
-                                }
-                            }
-                        }
-                        .padding(.top, 8)
+                        recentTransactionsSection
                     }
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 100)
                 }
                 .refreshable {
                     await refreshData()
                 }
             }
-            .navigationTitle("Home")
+            .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
+        }
+    }
+    
+    // MARK: - Recent Transactions Section
+    
+    private var recentTransactionsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Recent Activity")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                if !recentTransactions.isEmpty {
+                    Button(action: {
+                        // Navigate to Balance tab
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("See All")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Image(systemName: "arrow.right")
+                                .font(.caption)
+                        }
+                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.75))
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            if recentTransactions.isEmpty {
+                SmartEmptyState(type: .noTransactions)
+                    .frame(height: 300)
+            } else {
+                ForEach(Array(recentTransactions.enumerated()), id: \.element.id) { index, transaction in
+                    TransactionRow(transaction: transaction)
+                        .padding(.horizontal, 20)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .scale.combined(with: .opacity)
+                        ))
+                        .animation(
+                            .spring(response: 0.5, dampingFraction: 0.7)
+                                .delay(Double(index) * 0.05),
+                            value: recentTransactions.count
+                        )
+                }
+            }
         }
     }
     
     // MARK: - Computed Properties
     
-    /// Get the most recent 5-10 transactions
     private var recentTransactions: [Transaction] {
-        let maxCount = 10
-        return Array(viewModel.transactions.prefix(maxCount))
-    }
-    
-    // MARK: - Subviews
-    
-    /// Empty state view when no transactions exist
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "tray")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            
-            Text("No transactions yet")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Text("Tap + to add your first transaction")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 48)
+        Array(viewModel.transactions.prefix(8))
     }
     
     // MARK: - Methods
     
-    /// Refresh data with pull-to-refresh
     private func refreshData() async {
         isRefreshing = true
         await viewModel.loadTransactions()
-        
-        // Add slight delay for better UX
-        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        try? await Task.sleep(nanoseconds: 300_000_000)
         isRefreshing = false
     }
 }
 
 // MARK: - Preview
 
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeView()
-    }
+#Preview {
+    HomeView()
 }

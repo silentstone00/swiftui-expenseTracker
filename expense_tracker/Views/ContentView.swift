@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var themeViewModel: ThemeViewModel
+    
     var body: some View {
         MainTabView()
+            .preferredColorScheme(themeViewModel.isDarkMode ? .dark : .light)
     }
 }
 

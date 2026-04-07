@@ -185,24 +185,7 @@ struct BalanceView: View {
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "tray")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            Text(selectedFilter == nil ? "No transactions yet" : "No transactions found")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text(selectedFilter == nil
-                 ? "Tap + to add your first transaction"
-                 : "Try selecting a different category")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
+        SmartEmptyState(type: selectedFilter == nil ? .noTransactions : .noFilteredTransactions)
     }
     
     // MARK: - Actions
@@ -222,4 +205,35 @@ struct BalanceView: View {
 
 #Preview {
     BalanceView()
+}
+
+// MARK: - Filter Chip Component
+
+struct FilterChip: View {
+    let title: String
+    let icon: String
+    var color: Color = .blue
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                isSelected
+                    ? Color(red: 0.4, green: 0.8, blue: 0.75).opacity(0.2)
+                    : Color(red: 0.12, green: 0.12, blue: 0.12)
+            )
+            .foregroundColor(isSelected ? Color(red: 0.4, green: 0.8, blue: 0.75) : .white)
+            .cornerRadius(16)
+        }
+    }
 }
