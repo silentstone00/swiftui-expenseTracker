@@ -11,6 +11,8 @@ struct HomeView: View {
     // MARK: - Properties
     
     @EnvironmentObject private var viewModel: TransactionViewModel
+    @EnvironmentObject private var categoryViewModel: CategoryViewModel
+    @EnvironmentObject private var appState: AppState
     @State private var isRefreshing = false
     @State private var transactionToEdit: Transaction?
     // MARK: - Body
@@ -19,7 +21,7 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 // Dark background
-                Color(red: 0.05, green: 0.05, blue: 0.05)
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -45,7 +47,8 @@ struct HomeView: View {
             .sheet(item: $transactionToEdit) { transaction in
                 EditTransactionView(transaction: transaction)
                     .environmentObject(viewModel)
-                    .environmentObject(CategoryViewModel())
+                    .environmentObject(categoryViewModel)
+                    .environmentObject(appState)
             }
         }
     }
@@ -58,7 +61,7 @@ struct HomeView: View {
                 Text("Recent Activity")
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primaryText)
                 
                 Spacer()
                 
@@ -66,7 +69,8 @@ struct HomeView: View {
                     NavigationLink {
                         AllTransactionsView()
                             .environmentObject(viewModel)
-                            .environmentObject(CategoryViewModel())
+                            .environmentObject(categoryViewModel)
+                            .environmentObject(appState)
                     } label: {
                         HStack(spacing: 4) {
                             Text("See All")

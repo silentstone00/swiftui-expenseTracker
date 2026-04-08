@@ -9,8 +9,8 @@ import Foundation
 import CoreData
 
 /// Singleton manager for Core Data operations
-class DataManager {
-    static let shared = DataManager()
+class DataManager: @unchecked Sendable {
+    nonisolated(unsafe) static let shared = DataManager()
     
     // MARK: - Core Data Stack
     
@@ -91,7 +91,7 @@ class DataManager {
         let components = calendar.dateComponents([.year, .month], from: date)
         
         guard let startOfMonth = calendar.date(from: components),
-              let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth) else {
+              let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, second: -1), to: startOfMonth) else {
             throw DataManagerError.invalidDate
         }
         
@@ -129,10 +129,8 @@ class DataManager {
         if let date = date {
             transaction.date = date
         }
-        if let note = note {
-            transaction.note = note
-        }
-        
+        transaction.note = note  // nil clears the note field
+
         transaction.updatedAt = Date()
         try saveContext()
     }

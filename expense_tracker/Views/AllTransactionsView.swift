@@ -2,8 +2,6 @@
 //  AllTransactionsView.swift
 //  expense_tracker
 //
-//  All transactions view with filtering options
-//
 
 import SwiftUI
 
@@ -11,23 +9,20 @@ struct AllTransactionsView: View {
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     @EnvironmentObject private var categoryViewModel: CategoryViewModel
     @EnvironmentObject private var appState: AppState
-    
-    @State private var selectedFilter: Category?
+
+    @State private var selectedFilters: Set<UUID> = []
     @State private var transactionToEdit: Transaction?
-    
+    @State private var showFilterSheet: Bool = false
+
     var body: some View {
         ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.05)
-                .ignoresSafeArea()
+            Color.appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Category filter chips
                 if !categoryViewModel.categories.isEmpty {
-                    categoryFilterChips
-                        .padding(.vertical, 12)
+                    categoryFilterChips.padding(.vertical, 12)
                 }
 
-                // Transaction list or empty state
                 if filteredTransactions.isEmpty {
                     emptyStateView
                 } else {
@@ -38,39 +33,40 @@ struct AllTransactionsView: View {
         .navigationTitle("All Transactions")
         .navigationBarTitleDisplayMode(.large)
         .toolbar(.hidden, for: .tabBar)
-        .onAppear { appState.showFAB = false }
+        .onAppear {
+            appState.showFAB = false
+            Task { await categoryViewModel.loadCategories() }
+        }
         .onDisappear { appState.showFAB = true }
         .sheet(item: $transactionToEdit) { transaction in
             EditTransactionView(transaction: transaction)
                 .environmentObject(transactionViewModel)
                 .environmentObject(categoryViewModel)
+                .environmentObject(appState)
         }
-        .task {
-            await categoryViewModel.loadCategories()
+        .sheet(isPresented: $showFilterSheet) {
+            CategoryFilterSheet(
+                categories: categoryViewModel.categories,
+                selectedFilters: $selectedFilters
+            )
         }
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var filteredTransactions: [Transaction] {
-        if let selectedFilter = selectedFilter {
-            // Filter by both category ID and name for better matching
-            return transactionViewModel.transactions.filter { transaction in
-                // Match by ID first (most reliable)
-                if transaction.category.id == selectedFilter.id {
-                    return true
-                }
-                // Fallback to name matching (case-insensitive)
-                return transaction.category.name.lowercased() == selectedFilter.name.lowercased()
-            }
+        guard !selectedFilters.isEmpty else {
+            return transactionViewModel.transactions
         }
-        return transactionViewModel.transactions
+        return transactionViewModel.transactions.filter {
+            selectedFilters.contains($0.category.id)
+        }
     }
-    
+
     private var groupedTransactions: [(String, [Transaction])] {
         let calendar = Calendar.current
         let now = Date()
-        
+
         let grouped = Dictionary(grouping: filteredTransactions) { transaction -> String in
             if calendar.isDateInToday(transaction.date) {
                 return "Today"
@@ -86,19 +82,15 @@ struct AllTransactionsView: View {
                 return formatter.string(from: transaction.date)
             }
         }
-        
+
         let sortOrder = ["Today", "Yesterday", "This Week", "This Month"]
         return grouped.sorted { first, second in
             if let firstIndex = sortOrder.firstIndex(of: first.key),
                let secondIndex = sortOrder.firstIndex(of: second.key) {
                 return firstIndex < secondIndex
             }
-            if sortOrder.contains(first.key) {
-                return true
-            }
-            if sortOrder.contains(second.key) {
-                return false
-            }
+            if sortOrder.contains(first.key) { return true }
+            if sortOrder.contains(second.key) { return false }
             if let firstDate = first.value.first?.date,
                let secondDate = second.value.first?.date {
                 return firstDate > secondDate
@@ -106,56 +98,94 @@ struct AllTransactionsView: View {
             return first.key > second.key
         }
     }
-    
+
     // MARK: - Category Filter Chips
-    
+
     private var categoryFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+          HStack(spacing: 8) {
+            // All chip
+            FilterChip(
+                title: "All",
+                icon: "line.3.horizontal.decrease.circle",
+                color: .accentColor,
+                isSelected: selectedFilters.isEmpty
+            ) {
+                selectedFilters.removeAll()
+            }
+
+            // First 4 categories
+            ForEach(Array(categoryViewModel.categories.prefix(4))) { category in
                 FilterChip(
-                    title: "All",
-                    icon: "line.3.horizontal.decrease.circle",
-                    isSelected: selectedFilter == nil
+                    title: category.name,
+                    icon: category.icon,
+                    color: category.color.color,
+                    isSelected: selectedFilters.contains(category.id)
                 ) {
-                    selectedFilter = nil
-                }
-                
-                ForEach(categoryViewModel.categories) { category in
-                    FilterChip(
-                        title: category.name,
-                        icon: category.icon,
-                        color: category.color.color,
-                        isSelected: selectedFilter?.id == category.id
-                    ) {
-                        if selectedFilter?.id == category.id {
-                            selectedFilter = nil
-                        } else {
-                            selectedFilter = category
-                        }
+                    if selectedFilters.contains(category.id) {
+                        selectedFilters.remove(category.id)
+                    } else {
+                        selectedFilters.insert(category.id)
                     }
                 }
             }
-            .padding(.horizontal)
+
+            // More button — shown if categories > 4
+            if categoryViewModel.categories.count > 4 {
+                let extraSelected = selectedFilters.filter { id in
+                    !categoryViewModel.categories.prefix(4).map(\.id).contains(id)
+                }.count
+
+                Button(action: { showFilterSheet = true }) {
+                    HStack(spacing: 5) {
+                        if extraSelected > 0 {
+                            Text("\(extraSelected)")
+                                .font(.caption2.weight(.bold))
+                                .foregroundColor(.white)
+                                .frame(width: 16, height: 16)
+                                .background(Circle().fill(Color.accentColor))
+                        }
+                        Text("•••")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(extraSelected > 0 ? Color.accentColor : .primaryText)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(
+                        extraSelected > 0
+                            ? Color.accentColor.opacity(0.15)
+                            : Color.inputBackground
+                    )
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(
+                                extraSelected > 0 ? Color.accentColor.opacity(0.4) : Color.clear,
+                                lineWidth: 1
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+          }
+          .padding(.horizontal)
+          .padding(.vertical, 2)
         }
     }
-    
+
     // MARK: - Transaction List
-    
+
     private var transactionList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16, pinnedViews: [.sectionHeaders]) {
                 ForEach(groupedTransactions, id: \.0) { group in
                     Section {
-                        ForEach(Array(group.1.sorted(by: { $0.date > $1.date }).enumerated()), id: \.element.id) { index, transaction in
+                        ForEach(Array(group.1.sorted(by: { $0.date > $1.date }).enumerated()), id: \.element.id) { _, transaction in
                             TransactionRow(
                                 transaction: transaction,
-                                onEdit: {
-                                    transactionToEdit = transaction
-                                },
+                                onEdit: { transactionToEdit = transaction },
                                 onDelete: {
-                                    Task {
-                                        try? await transactionViewModel.deleteTransaction(transaction)
-                                    }
+                                    Task { try? await transactionViewModel.deleteTransaction(transaction) }
                                 }
                             )
                             .padding(.horizontal)
@@ -163,22 +193,116 @@ struct AllTransactionsView: View {
                     } header: {
                         Text(group.0)
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                             .padding(.vertical, 8)
-                            .background(Color(red: 0.05, green: 0.05, blue: 0.05))
+                            .background(Color.appBackground)
                     }
                 }
             }
             .padding(.vertical)
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyStateView: some View {
-        SmartEmptyState(type: selectedFilter == nil ? .noTransactions : .noFilteredTransactions)
+        SmartEmptyState(type: selectedFilters.isEmpty ? .noTransactions : .noFilteredTransactions)
+    }
+}
+
+// MARK: - Category Filter Sheet
+
+struct CategoryFilterSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let categories: [Category]
+    @Binding var selectedFilters: Set<UUID>
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.appBackground.ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(categories) { category in
+                            Button(action: {
+                                if selectedFilters.contains(category.id) {
+                                    selectedFilters.remove(category.id)
+                                } else {
+                                    selectedFilters.insert(category.id)
+                                }
+                            }) {
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(category.color.color.opacity(0.15))
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: category.icon)
+                                            .font(.system(size: 18, weight: .medium))
+                                            .foregroundColor(category.color.color)
+                                    }
+
+                                    Text(category.name)
+                                        .font(.body)
+                                        .foregroundColor(.primaryText)
+
+                                    Spacer()
+
+                                    ZStack {
+                                        Circle()
+                                            .strokeBorder(
+                                                selectedFilters.contains(category.id)
+                                                    ? category.color.color
+                                                    : Color.secondaryText.opacity(0.3),
+                                                lineWidth: 2
+                                            )
+                                            .frame(width: 24, height: 24)
+                                        if selectedFilters.contains(category.id) {
+                                            Circle()
+                                                .fill(category.color.color)
+                                                .frame(width: 14, height: 14)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 14)
+                                .background(
+                                    selectedFilters.contains(category.id)
+                                        ? category.color.color.opacity(0.06)
+                                        : Color.clear
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Divider()
+                                .padding(.leading, 78)
+                                .opacity(0.3)
+                        }
+                    }
+                    .background(Color.cardBackground)
+                    .cornerRadius(14)
+                    .padding()
+                }
+            }
+            .navigationTitle("Filter by Category")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Clear") {
+                        selectedFilters.removeAll()
+                    }
+                    .foregroundColor(.secondaryText)
+                    .disabled(selectedFilters.isEmpty)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
+                        .foregroundColor(.accentColor)
+                }
+            }
+        }
     }
 }
 
@@ -190,26 +314,24 @@ struct FilterChip: View {
     var color: Color = .blue
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                Image(systemName: icon).font(.system(size: 14))
+                Text(title).font(.subheadline).fontWeight(.medium)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(
-                isSelected
-                    ? Color.accentColor.opacity(0.2)
-                    : Color(red: 0.12, green: 0.12, blue: 0.12)
-            )
-            .foregroundColor(isSelected ? Color.accentColor : .white)
+            .background(isSelected ? color.opacity(0.18) : Color.inputBackground)
+            .foregroundColor(isSelected ? color : .primaryText)
             .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(isSelected ? color.opacity(0.4) : Color.clear, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
 }
 

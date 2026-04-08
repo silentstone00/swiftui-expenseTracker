@@ -26,19 +26,19 @@ struct AnimatedPieChart: View {
                 
                 // Center hole for donut effect
                 Circle()
-                    .fill(Color(red: 0.05, green: 0.05, blue: 0.05))
+                    .fill(Color.appBackground)
                     .frame(width: geometry.size.width * 0.5, height: geometry.size.height * 0.5)
                 
                 // Total in center
                 VStack(spacing: 4) {
                     Text("Total")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondaryText)
                     
                     Text(formatCurrency(totalAmount))
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primaryText)
                 }
                 .opacity(animationProgress)
             }
@@ -70,9 +70,9 @@ struct AnimatedPieChart: View {
     private func formatCurrency(_ value: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
+        formatter.currencyCode = "INR"
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: value as NSNumber) ?? "$0"
+        return formatter.string(from: value as NSNumber) ?? "₹0"
     }
 }
 

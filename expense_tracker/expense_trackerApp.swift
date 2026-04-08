@@ -10,6 +10,15 @@ import Combine
 
 class AppState: ObservableObject {
     @Published var showFAB: Bool = true
+    @Published var toastMessage: String? = nil
+    @Published var toastIcon: String = "checkmark.circle.fill"
+    @Published var toastColor: Color = .accentColor
+
+    func showToast(message: String, icon: String, color: Color) {
+        toastMessage = message
+        toastIcon = icon
+        toastColor = color
+    }
 }
 
 @main

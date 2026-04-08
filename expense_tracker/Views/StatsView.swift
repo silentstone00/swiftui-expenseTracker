@@ -9,6 +9,9 @@ import Charts
 struct StatsView: View {
     @EnvironmentObject private var viewModel: TransactionViewModel
     @State private var selectedPeriod: Period = .monthly
+    @State private var showCSVShare: Bool = false
+    @State private var csvActivityItem: CSVActivityItem? = nil
+    @State private var isGenerating: Bool = false
 
     enum Period: String, CaseIterable {
         case weekly = "Week"
@@ -54,16 +57,15 @@ struct StatsView: View {
 
     private var pieData: [PieEntry] {
         let palette: [Color] = [
-            Color(red: 0.38, green: 0.52, blue: 1.0),   // indigo
-            Color(red: 0.68, green: 0.38, blue: 1.0),   // violet
-            Color(red: 1.0,  green: 0.38, blue: 0.58),  // rose
-            Color(red: 1.0,  green: 0.72, blue: 0.22),  // amber
-            Color(red: 0.22, green: 0.88, blue: 0.72),  // teal
-            Color(red: 0.38, green: 0.92, blue: 0.58),  // mint
+            Color(red: 0.38, green: 0.52, blue: 1.0),
+            Color(red: 0.68, green: 0.38, blue: 1.0),
+            Color(red: 1.0,  green: 0.38, blue: 0.58),
+            Color(red: 1.0,  green: 0.72, blue: 0.22),
+            Color(red: 0.22, green: 0.88, blue: 0.72),
+            Color(red: 0.38, green: 0.92, blue: 0.58),
         ]
 
         if selectedPeriod == .weekly {
-            // Week: breakdown by day of week
             let calendar = Calendar.current
             let fmt = DateFormatter(); fmt.dateFormat = "EEE"
             var byDay: [String: (total: Decimal, order: Int)] = [:]
@@ -81,7 +83,6 @@ struct StatsView: View {
                              color: palette[i % palette.count])
                 }
         } else {
-            // Month: breakdown by category
             return expenseCategories.prefix(6).enumerated().map { i, item in
                 PieEntry(
                     id: item.category.id,
@@ -134,7 +135,7 @@ struct StatsView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.05).ignoresSafeArea()
+            Color.appBackground.ignoresSafeArea()
 
             if viewModel.transactions.isEmpty {
                 SmartEmptyState(type: .noStats)
@@ -145,22 +146,41 @@ struct StatsView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
 
-                        summaryRow
-                            .padding(.horizontal, 20)
-
                         if !expenseCategories.isEmpty {
-                            spendingBreakdownCard
-                                .padding(.horizontal, 20)
-
-                            topCategoriesSection
-                                .padding(.horizontal, 20)
+                            spendingBreakdownCard.padding(.horizontal, 20)
+                            topCategoriesSection.padding(.horizontal, 20)
                         }
 
-                        trendCard
-                            .padding(.horizontal, 20)
+                        trendCard.padding(.horizontal, 20)
+
+                        if selectedPeriod == .monthly {
+                            generateReportButton.padding(.horizontal, 20)
+                        }
                     }
                     .padding(.bottom, 110)
                 }
+                .gesture(
+                    DragGesture(minimumDistance: 40, coordinateSpace: .local)
+                        .onEnded { value in
+                            // Only respond to clearly horizontal swipes
+                            guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                if value.translation.width < 0 {
+                                    // Swipe left → Month
+                                    selectedPeriod = .monthly
+                                } else {
+                                    // Swipe right → Week
+                                    selectedPeriod = .weekly
+                                }
+                            }
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                )
+            }
+        }
+        .sheet(isPresented: $showCSVShare) {
+            if let item = csvActivityItem {
+                ShareSheet(item: item)
             }
         }
     }
@@ -169,20 +189,18 @@ struct StatsView: View {
 
     private var periodPicker: some View {
         Picker("Period", selection: $selectedPeriod) {
-            ForEach(Period.allCases, id: \.self) { period in
-                Text(period.rawValue).tag(period)
-            }
+            ForEach(Period.allCases, id: \.self) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
-        .frame(height : 50)
+        .frame(height: 50)
     }
 
     // MARK: - Summary Row
 
     private var summaryRow: some View {
         HStack(spacing: 10) {
-            StatSummaryCard(label: "Income", amount: totalIncome, color: Color(red: 0.3, green: 0.85, blue: 0.5))
-            StatSummaryCard(label: "Expenses", amount: totalExpenses, color: Color(red: 1, green: 0.35, blue: 0.35))
+            StatSummaryCard(label: "Income",   amount: totalIncome,   color: Color(red: 0.3, green: 0.85, blue: 0.5))
+            StatSummaryCard(label: "Expenses", amount: totalExpenses, color: Color(red: 1,   green: 0.35, blue: 0.35))
             StatSummaryCard(
                 label: "Net",
                 amount: netAmount,
@@ -197,9 +215,8 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text(pieChartTitle)
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primaryText)
 
-            // Donut chart
             ZStack {
                 Chart(pieData) { slice in
                     SectorMark(
@@ -215,14 +232,13 @@ struct StatsView: View {
                 VStack(spacing: 3) {
                     Text("Total")
                         .font(.caption2)
-                        .foregroundColor(Color(white: 0.45))
+                        .foregroundColor(.tertiaryText)
                     Text(formatCurrency(totalExpenses))
                         .font(.title3.weight(.bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primaryText)
                 }
             }
 
-            // Legend grid
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(pieData) { slice in
                     HStack(spacing: 8) {
@@ -231,12 +247,12 @@ struct StatsView: View {
                             .frame(width: 10, height: 10)
                         Text(slice.label)
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(.primaryText)
                             .lineLimit(1)
                         Spacer(minLength: 0)
                         Text(formatCurrencyShort(slice.value))
                             .font(.caption)
-                            .foregroundColor(Color(white: 0.45))
+                            .foregroundColor(.tertiaryText)
                     }
                 }
             }
@@ -244,7 +260,7 @@ struct StatsView: View {
         .padding(20)
         .background(
             LinearGradient(
-                colors: [Color(white: 0.115), Color(white: 0.075)],
+                colors: [.statCardTop, .statCardBottom],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -258,7 +274,7 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Top Categories")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primaryText)
 
             VStack(spacing: 8) {
                 ForEach(Array(expenseCategories.prefix(2).enumerated()), id: \.element.category.id) { index, item in
@@ -282,11 +298,11 @@ struct StatsView: View {
             HStack {
                 Text("Trend")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primaryText)
                 Spacer()
                 HStack(spacing: 14) {
-                    TrendLegendDot(color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Income")
-                    TrendLegendDot(color: Color(red: 1, green: 0.35, blue: 0.35), label: "Expenses")
+                    TrendLegendDot(color: Color(red: 0.3, green: 0.85, blue: 0.5),  label: "Income")
+                    TrendLegendDot(color: Color(red: 1,   green: 0.35, blue: 0.35), label: "Expenses")
                 }
             }
 
@@ -298,19 +314,11 @@ struct StatsView: View {
                 .foregroundStyle(
                     item.type == "Income"
                         ? LinearGradient(
-                            colors: [
-                                Color(red: 0.55, green: 1.0,  blue: 0.75),
-                                Color(red: 0.18, green: 0.72, blue: 0.48)
-                            ],
-                            startPoint: .top, endPoint: .bottom
-                          )
+                            colors: [Color(red: 0.55, green: 1.0, blue: 0.75), Color(red: 0.18, green: 0.72, blue: 0.48)],
+                            startPoint: .top, endPoint: .bottom)
                         : LinearGradient(
-                            colors: [
-                                Color(red: 1.0,  green: 0.52, blue: 0.52),
-                                Color(red: 0.85, green: 0.18, blue: 0.28)
-                            ],
-                            startPoint: .top, endPoint: .bottom
-                          )
+                            colors: [Color(red: 1.0, green: 0.52, blue: 0.52), Color(red: 0.85, green: 0.18, blue: 0.28)],
+                            startPoint: .top, endPoint: .bottom)
                 )
                 .cornerRadius(5)
                 .position(by: .value("Type", item.type), axis: .horizontal, span: .ratio(0.55))
@@ -321,11 +329,11 @@ struct StatsView: View {
                         if let v = value.as(Double.self) {
                             Text(formatAxisAmount(v))
                                 .font(.caption2)
-                                .foregroundColor(Color(white: 0.38))
+                                .foregroundColor(.secondaryText)
                         }
                     }
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color(white: 0.13))
+                        .foregroundStyle(Color.secondaryText.opacity(0.3))
                 }
             }
             .chartXAxis {
@@ -334,7 +342,7 @@ struct StatsView: View {
                         if let label = value.as(String.self) {
                             Text(label)
                                 .font(.caption2)
-                                .foregroundColor(Color(white: 0.38))
+                                .foregroundColor(.secondaryText)
                         }
                     }
                 }
@@ -344,7 +352,7 @@ struct StatsView: View {
         .padding(20)
         .background(
             LinearGradient(
-                colors: [Color(white: 0.115), Color(white: 0.075)],
+                colors: [.statCardTop, .statCardBottom],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -352,26 +360,102 @@ struct StatsView: View {
         .cornerRadius(20)
     }
 
+    // MARK: - Generate Report Button
+
+    private var currentMonthName: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMMM yyyy"
+        return fmt.string(from: Date())
+    }
+
+    private var generateReportButton: some View {
+        Button(action: {
+            guard !isGenerating else { return }
+            isGenerating = true
+            // Capture data on main thread before jumping off
+            let transactions = periodTransactions.sorted(by: { $0.date < $1.date })
+            let fileName = "\(currentMonthName.replacingOccurrences(of: " ", with: "_"))_Transactions.csv"
+            Task.detached(priority: .userInitiated) {
+                let data = buildCSVData(from: transactions)
+                await MainActor.run {
+                    if let data {
+                        csvActivityItem = CSVActivityItem(data: data, fileName: fileName)
+                        showCSVShare = true
+                    }
+                    isGenerating = false
+                }
+            }
+        }) {
+            HStack(spacing: 10) {
+                ZStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.primaryText)
+                        .scaleEffect(0.85)
+                        .opacity(isGenerating ? 1 : 0)
+                    Image(systemName: "tablecells.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .opacity(isGenerating ? 0 : 1)
+                }
+                .frame(width: 18, height: 18)
+
+                Text(isGenerating ? "Generating…" : "Generate \(currentMonthName) Report")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .id(isGenerating)          // swap view identity to prevent text animation
+            }
+            .foregroundColor(.primaryText)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                LinearGradient(
+                    colors: [.statCardTop, .statCardBottom],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.primaryText.opacity(0.12), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func buildCSVData(from transactions: [Transaction]) -> Data? {
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd"
+
+        var rows: [String] = ["Date,Category,Type,Amount,Note"]
+        for t in transactions {
+            let date = dateFmt.string(from: t.date)
+            let category = t.category.name.csvEscaped
+            let type = t.type == .income ? "Income" : "Expense"
+            let amount = String(describing: t.amount)
+            let note = (t.note ?? "").csvEscaped
+            rows.append("\(date),\(category),\(type),\(amount),\(note)")
+        }
+
+        return rows.joined(separator: "\n").data(using: .utf8)
+    }
+
     // MARK: - Helpers
 
     private func formatCurrency(_ value: Decimal) -> String {
         let fmt = NumberFormatter()
         fmt.numberStyle = .currency
-        fmt.currencyCode = "USD"
+        fmt.currencyCode = "INR"
         fmt.maximumFractionDigits = 0
-        return fmt.string(from: value as NSNumber) ?? "$0"
+        return fmt.string(from: value as NSNumber) ?? "₹0"
     }
 
     private func formatCurrencyShort(_ value: Double) -> String {
-        if value >= 1000 {
-            return String(format: "$%.0fk", value / 1000)
-        }
-        return String(format: "$%.0f", value)
+        value >= 1000 ? String(format: "₹%.0fk", value / 1000) : String(format: "₹%.0f", value)
     }
 
     private func formatAxisAmount(_ amount: Double) -> String {
-        if amount >= 1000 { return String(format: "$%.0fk", amount / 1000) }
-        return "$\(Int(amount))"
+        amount >= 1000 ? String(format: "₹%.0fk", amount / 1000) : "₹\(Int(amount))"
     }
 }
 
@@ -402,7 +486,7 @@ private struct StatSummaryCard: View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label)
                 .font(.caption2.weight(.medium))
-                .foregroundColor(Color(white: 0.45))
+                .foregroundColor(.tertiaryText)
             Text(formatted)
                 .font(.subheadline.weight(.bold))
                 .foregroundColor(color)
@@ -414,7 +498,7 @@ private struct StatSummaryCard: View {
         .padding(.vertical, 14)
         .background(
             LinearGradient(
-                colors: [Color(white: 0.115), Color(white: 0.07)],
+                colors: [.statCardTop, .statCardBottom],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -429,9 +513,9 @@ private struct StatSummaryCard: View {
     private var formatted: String {
         let fmt = NumberFormatter()
         fmt.numberStyle = .currency
-        fmt.currencyCode = "USD"
+        fmt.currencyCode = "INR"
         fmt.maximumFractionDigits = 0
-        return fmt.string(from: amount as NSNumber) ?? "$0"
+        return fmt.string(from: amount as NSNumber) ?? "₹0"
     }
 }
 
@@ -445,7 +529,7 @@ private struct StatCategoryRow: View {
         HStack(spacing: 12) {
             Text("\(rank)")
                 .font(.caption2.weight(.semibold))
-                .foregroundColor(Color(white: 0.3))
+                .foregroundColor(.quaternaryText)
                 .frame(width: 14, alignment: .center)
 
             ZStack {
@@ -459,24 +543,24 @@ private struct StatCategoryRow: View {
 
             Text(category.name)
                 .font(.subheadline)
-                .foregroundColor(.white)
+                .foregroundColor(.primaryText)
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(formattedAmount)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primaryText)
                 Text("\(Int(percentage * 100))%")
                     .font(.caption2)
-                    .foregroundColor(Color(white: 0.4))
+                    .foregroundColor(.tertiaryText)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
             LinearGradient(
-                colors: [Color(white: 0.115), Color(white: 0.075)],
+                colors: [.statCardTop, .statCardBottom],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -487,9 +571,9 @@ private struct StatCategoryRow: View {
     private var formattedAmount: String {
         let fmt = NumberFormatter()
         fmt.numberStyle = .currency
-        fmt.currencyCode = "USD"
+        fmt.currencyCode = "INR"
         fmt.maximumFractionDigits = 0
-        return fmt.string(from: amount as NSNumber) ?? "$0"
+        return fmt.string(from: amount as NSNumber) ?? "₹0"
     }
 }
 
@@ -502,13 +586,71 @@ private struct TrendLegendDot: View {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(label)
                 .font(.caption2)
-                .foregroundColor(Color(white: 0.45))
+                .foregroundColor(.tertiaryText)
         }
     }
 }
 
+// MARK: - CSV Helpers
+
+private extension String {
+    /// Wraps the value in quotes if it contains a comma, quote, or newline
+    var csvEscaped: String {
+        if self.contains(",") || self.contains("\"") || self.contains("\n") {
+            return "\"" + self.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }
+        return self
+    }
+}
+
+// MARK: - CSV Activity Item
+//
+// UIActivityItemSource writes to temp inside itemForActivityType,
+// which runs in the main app process — never via XPC — so the file
+// is always accessible regardless of sandbox restrictions.
+
+import UIKit
+
+final class CSVActivityItem: NSObject, UIActivityItemSource {
+    private let csvData: Data
+    private let fileName: String
+
+    init(data: Data, fileName: String) {
+        self.csvData = data
+        self.fileName = fileName
+    }
+
+    // Placeholder shown while the share sheet is initialising
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return fileName as NSString
+    }
+
+    // Called lazily when the user taps a share target — still main-process, not XPC
+    func activityViewController(_ activityViewController: UIActivityViewController,
+                                itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try? csvData.write(to: tmpURL, options: .atomic)
+        return tmpURL
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController,
+                                subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        return fileName
+    }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let item: CSVActivityItem
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [item], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 // MARK: - Preview
 
-#Preview {
-    StatsView()
-}
+#Preview { StatsView() }

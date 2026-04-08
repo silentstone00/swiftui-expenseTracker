@@ -62,17 +62,28 @@ struct Category: Identifiable, Codable, Hashable {
         self.isCustom = isCustom
     }
     
+    // MARK: - Income Default Category
+
+    /// Stable income category — fixed UUID so Core Data never creates duplicates
+    static let income = Category(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+        name: "Income",
+        icon: "indianrupeesign.circle.fill",
+        color: .green,
+        isCustom: false
+    )
+
     // MARK: - Predefined Categories
-    
-    /// Predefined categories available to all users
+
+    /// Predefined categories available to all users — fixed UUIDs so IDs are stable across launches
     static let predefined: [Category] = [
-        Category(name: "Food", icon: "fork.knife", color: .orange, isCustom: false),
-        Category(name: "Transport", icon: "car.fill", color: .blue, isCustom: false),
-        Category(name: "Shopping", icon: "cart.fill", color: .purple, isCustom: false),
-        Category(name: "Entertainment", icon: "tv.fill", color: .pink, isCustom: false),
-        Category(name: "Bills", icon: "doc.text.fill", color: .red, isCustom: false),
-        Category(name: "Salary", icon: "dollarsign.circle.fill", color: .green, isCustom: false),
-        Category(name: "Other", icon: "ellipsis.circle.fill", color: .gray, isCustom: false)
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000010")!, name: "Food", icon: "fork.knife", color: .orange, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000020")!, name: "Transport", icon: "car.fill", color: .blue, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000030")!, name: "Shopping", icon: "cart.fill", color: .purple, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000040")!, name: "Entertainment", icon: "tv.fill", color: .pink, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000050")!, name: "Bills", icon: "doc.text.fill", color: .red, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000060")!, name: "Salary", icon: "indianrupeesign.circle.fill", color: .green, isCustom: false),
+        Category(id: UUID(uuidString: "00000000-0000-0000-0000-000000000070")!, name: "Other", icon: "ellipsis.circle.fill", color: .gray, isCustom: false)
     ]
 }
 
@@ -118,7 +129,7 @@ struct MonthlySummary {
     let totalIncome: Decimal
     let totalExpenses: Decimal
     let transactionCount: Int
-    let categoryBreakdown: [Category: Decimal]
+    let categoryBreakdown: [UUID: Decimal]     // keyed by category ID — UUID is nonisolated Hashable
     
     /// Computed balance (income - expenses)
     var balance: Decimal {
@@ -130,7 +141,7 @@ struct MonthlySummary {
         totalIncome: Decimal = 0,
         totalExpenses: Decimal = 0,
         transactionCount: Int = 0,
-        categoryBreakdown: [Category: Decimal] = [:]
+        categoryBreakdown: [UUID: Decimal] = [:]
     ) {
         self.month = month
         self.totalIncome = totalIncome

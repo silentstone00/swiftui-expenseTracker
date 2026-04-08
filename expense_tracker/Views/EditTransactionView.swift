@@ -2,54 +2,44 @@
 //  EditTransactionView.swift
 //  expense_tracker
 //
-//  Edit existing transaction view
-//
 
 import SwiftUI
 
 struct EditTransactionView: View {
     // MARK: - Environment
-    
+
     @Environment(\.dismiss) private var dismiss
-    
-    // MARK: - ViewModels
-    
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     @EnvironmentObject private var categoryViewModel: CategoryViewModel
-    
+    @EnvironmentObject private var appState: AppState
+
     // MARK: - Transaction to Edit
-    
+
     let transaction: Transaction
-    
+
     // MARK: - Form State
-    
+
     @State private var amount: String = ""
     @State private var transactionType: TransactionType = .expense
     @State private var selectedCategory: Category?
     @State private var date: Date = Date()
     @State private var note: String = ""
-    
+
     // MARK: - UI State
-    
+
     @State private var validationErrors: [ValidationError] = []
     @State private var isSaving: Bool = false
-    @State private var showCategoryPicker: Bool = false
+    @State private var showAddCategory: Bool = false
     @State private var showAllCategories: Bool = false
     @FocusState private var focusedField: Field?
-    
+
     // MARK: - Constants
-    
+
     private let noteCharacterLimit = 200
     private let quickAmounts: [Decimal] = [10, 50, 100, 500]
-    private let initialCategoryCount = 7
-    
-    // MARK: - Field Enum
-    
-    enum Field: Hashable {
-        case amount
-        case note
-    }
-    
+
+    enum Field: Hashable { case amount; case note }
+
     // MARK: - Initialization
 
     init(transaction: Transaction) {
@@ -60,73 +50,77 @@ struct EditTransactionView: View {
         _date = State(initialValue: transaction.date)
         _note = State(initialValue: transaction.note ?? "")
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Dark background
-                Color(red: 0.05, green: 0.05, blue: 0.05)
-                    .ignoresSafeArea()
-                
-                // Dismiss keyboard on tap outside
+                Color.appBackground.ignoresSafeArea()
+
                 Color.clear
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        focusedField = nil
-                    }
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Transaction Type Toggle
+                    .onTapGesture { focusedField = nil }
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 28) {
                         transactionTypeToggle
                             .padding(.top, 8)
-                            .onChange(of: transactionType) { newType in
-                                if newType == .income {
-                                    selectedCategory = nil
-                                }
+                            .onChange(of: transactionType) {
+                                if transactionType == .income { selectedCategory = nil }
                             }
-                        
-                        // Amount Field with Quick Buttons
+
                         amountSection
-                        
-                        // Category Picker (only for expenses)
+
                         if transactionType == .expense {
                             categoryPickerSection
                         }
-                        
-                        // Date Picker
+
                         datePickerSection
-                        
-                        // Note Field
                         noteField
-                        
-                        // Save Button
-                        saveButton
-                            .padding(.top, 16)
+                        saveButton.padding(.top, 8)
                     }
                     .padding()
+                    .gesture(
+                        DragGesture(minimumDistance: 40, coordinateSpace: .local)
+                            .onEnded { value in
+                                guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
+                                let newType: TransactionType = value.translation.width < 0 ? .income : .expense
+                                guard newType != transactionType else { return }
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                    transactionType = newType
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
+                    )
                 }
+                .simultaneousGesture(TapGesture().onEnded { focusedField = nil })
             }
             .navigationTitle("Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.white)
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(.primaryText)
                 }
             }
-            .task {
-                await categoryViewModel.loadCategories()
+            .task { await categoryViewModel.loadCategories() }
+            .sheet(isPresented: $showAddCategory) {
+                AddCategorySheet()
+                    .environmentObject(categoryViewModel)
+            }
+            .sheet(isPresented: $showAllCategories, onDismiss: nil) {
+                AllCategoriesSheet(selectedCategory: $selectedCategory)
+                    .environmentObject(categoryViewModel)
+            }
+            .onChange(of: showAllCategories) {
+                if showAllCategories { Task { await categoryViewModel.loadCategories() } }
             }
         }
     }
-    
+
     // MARK: - Subviews
-    
+
     private var transactionTypeToggle: some View {
         Picker("Type", selection: $transactionType) {
             Text("Expense").tag(TransactionType.expense)
@@ -134,60 +128,52 @@ struct EditTransactionView: View {
         }
         .pickerStyle(.segmented)
     }
-    
+
     private var amountSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Amount")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-            
-            HStack {
-                Text("$")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                
-                TextField("0.00", text: $amount)
-                    .font(.title2)
-                    .keyboardType(.decimalPad)
-                    .focused($focusedField, equals: .amount)
-                    .foregroundColor(.white)
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(red: 0.12, green: 0.12, blue: 0.12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-            
-            if transactionType == .expense {
-                HStack(spacing: 12) {
-                    ForEach(quickAmounts, id: \.self) { quickAmount in
-                        Button(action: {
-                            addQuickAmount(quickAmount)
-                        }) {
-                            Text("+$\(formatQuickAmount(quickAmount))")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-                                )
-                        }
+        VStack(spacing: 20) {
+            // Large centered amount — custom placeholder avoids font mismatch
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("₹")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundColor(amount.isEmpty ? .secondaryText : .primaryText)
+
+                ZStack(alignment: .leading) {
+                    if amount.isEmpty {
+                        Text("0")
+                            .font(.system(size: 64, weight: .semibold))
+                            .foregroundColor(.secondaryText)
                     }
+                    TextField("", text: $amount)
+                        .font(.system(size: 64, weight: .semibold))
+                        .keyboardType(.decimalPad)
+                        .focused($focusedField, equals: .amount)
+                        .foregroundColor(.primaryText)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
             }
-            
+            .frame(maxWidth: .infinity, alignment: .center)
+            .contentShape(Rectangle())
+            .onTapGesture { focusedField = .amount }
+
+            // Suggestion pills — expense only
+            if transactionType == .expense {
+                HStack(spacing: 8) {
+                    ForEach(quickAmounts, id: \.self) { q in
+                        Button(action: { addQuickAmount(q) }) {
+                            Text("+₹\(formatQuickAmount(q))")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondaryText)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(Color.elevatedBackground))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
             if let error = validationErrors.first(where: { $0 == .invalidAmount }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -195,56 +181,70 @@ struct EditTransactionView: View {
             }
         }
     }
-    
+
     private var categoryPickerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Category")
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(.white)
-            
-            Button(action: {
-                showCategoryPicker.toggle()
-                focusedField = nil
-            }) {
-                HStack {
-                    if let category = selectedCategory {
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(category.color.color.opacity(0.2))
-                                    .frame(width: 40, height: 40)
-                                
-                                Image(systemName: category.icon)
-                                    .font(.system(size: 18))
-                                    .foregroundColor(category.color.color)
-                            }
-                            
-                            Text(category.name)
-                                .font(.body)
-                                .foregroundColor(.white)
+                .foregroundColor(.primaryText)
+
+            // Top 4 frequent categories — scrollable row, full names visible
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(sortedCategories.prefix(4))) { category in
+                        CategoryChip(
+                            category: category,
+                            isSelected: selectedCategory?.id == category.id
+                        )
+                        .onTapGesture {
+                            selectedCategory = category
+                            focusedField = nil
                         }
-                    } else {
-                        Text("Select a category")
-                            .foregroundColor(.gray)
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(.gray)
                 }
-                .padding()
-                .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-                .cornerRadius(12)
+                .padding(.vertical, 2)
             }
-            
-            if showCategoryPicker {
-                categoryPickerGrid
-                    .transition(.opacity.combined(with: .scale))
+
+            // View All + Add New
+            HStack(spacing: 10) {
+                Button(action: { showAllCategories = true }) {
+                    HStack(spacing: 6) {
+                        Text("View All")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(Color.elevatedBackground)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { showAddCategory = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Add New")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.accentColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(Color.accentColor.opacity(0.08))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            
+
             if let error = validationErrors.first(where: { $0 == .missingCategory }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -252,89 +252,14 @@ struct EditTransactionView: View {
             }
         }
     }
-    
-    private var categoryPickerGrid: some View {
-        VStack(spacing: 12) {
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                ForEach(displayedCategories) { category in
-                    Button(action: {
-                        selectedCategory = category
-                        withAnimation {
-                            showCategoryPicker = false
-                            showAllCategories = false
-                        }
-                    }) {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(category.color.color.opacity(0.2))
-                                    .frame(width: 56, height: 56)
-                                
-                                Image(systemName: category.icon)
-                                    .font(.system(size: 24))
-                                    .foregroundColor(category.color.color)
-                            }
-                            
-                            Text(category.name)
-                                .font(.caption)
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                if !showAllCategories && sortedCategories.count > initialCategoryCount {
-                    Button(action: {
-                        withAnimation {
-                            showAllCategories = true
-                        }
-                    }) {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white.opacity(0.1))
-                                    .frame(width: 56, height: 56)
-                                
-                                Image(systemName: "ellipsis")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-                            
-                            Text("More")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding()
-        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-        .cornerRadius(12)
-    }
-    
-    private var displayedCategories: [Category] {
-        if showAllCategories {
-            return sortedCategories
-        } else {
-            return Array(sortedCategories.prefix(initialCategoryCount))
-        }
-    }
-    
+
     private var datePickerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Date")
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(.white)
-            
+                .foregroundColor(.primaryText)
+
             HStack {
                 DatePicker(
                     "",
@@ -344,14 +269,16 @@ struct EditTransactionView: View {
                 )
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .colorScheme(.dark)
-                
                 Spacer()
             }
             .padding()
-            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-            .cornerRadius(12)
-            
+            .background(Color.fieldBackground)
+            .cornerRadius(18)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Color.gray.opacity(0.25), lineWidth: 1)
+            )
+
             if let error = validationErrors.first(where: { $0 == .futureDateNotAllowed }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -359,35 +286,37 @@ struct EditTransactionView: View {
             }
         }
     }
-    
+
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Note (Optional)")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(.primaryText)
                 Spacer()
-                
                 Text("\(note.count)/\(noteCharacterLimit)")
                     .font(.caption)
                     .foregroundColor(note.count > noteCharacterLimit ? .red : .gray)
             }
-            
+
             TextField("Add a note...", text: $note)
                 .lineLimit(3)
                 .focused($focusedField, equals: .note)
                 .padding()
-                .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+                .background(Color.fieldBackground)
                 .cornerRadius(12)
-                .foregroundColor(.white)
-                .onChange(of: note) { newValue in
-                    if newValue.count > noteCharacterLimit {
-                        note = String(newValue.prefix(noteCharacterLimit))
+                .foregroundColor(.primaryText)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color.gray.opacity(0.25), lineWidth: 1)
+                )
+                .onChange(of: note) {
+                    if note.count > noteCharacterLimit {
+                        note = String(note.prefix(noteCharacterLimit))
                     }
                 }
-            
+
             if let error = validationErrors.first(where: { $0 == .noteTooLong }) {
                 Text(error.errorDescription ?? "")
                     .font(.caption)
@@ -395,18 +324,14 @@ struct EditTransactionView: View {
             }
         }
     }
-    
+
     private var saveButton: some View {
         Button(action: {
-            Task {
-                await updateTransaction()
-            }
+            Task { await updateTransaction() }
         }) {
             HStack {
                 if isSaving {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(.white)
+                    ProgressView().progressViewStyle(.circular).tint(.white)
                 } else {
                     Text("Update Transaction")
                         .fontWeight(.semibold)
@@ -417,64 +342,58 @@ struct EditTransactionView: View {
             .background(
                 LinearGradient(
                     colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
+                    startPoint: .leading, endPoint: .trailing
                 )
             )
-            .foregroundColor(.white)
+            .foregroundColor(.primaryText)
             .cornerRadius(12)
         }
         .disabled(isSaving)
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var sortedCategories: [Category] {
-        let recentCategoryIds = transactionViewModel.transactions
-            .prefix(10)
-            .map { $0.category.id }
-        
-        let recentCategories = categoryViewModel.categories.filter { recentCategoryIds.contains($0.id) }
-        let otherCategories = categoryViewModel.categories.filter { !recentCategoryIds.contains($0.id) }
-        
-        return recentCategories + otherCategories
+        let recentIds = transactionViewModel.transactions.prefix(10).map { $0.category.id }
+        let recent = categoryViewModel.categories.filter { recentIds.contains($0.id) }
+        let other = categoryViewModel.categories.filter { !recentIds.contains($0.id) }
+        return recent + other
     }
-    
+
     // MARK: - Methods
-    
+
     private func addQuickAmount(_ quickAmount: Decimal) {
         let currentAmount = Decimal(string: amount) ?? 0
-        let newAmount = currentAmount + quickAmount
-        amount = String(describing: newAmount)
+        amount = String(describing: currentAmount + quickAmount)
     }
-    
+
     private func formatQuickAmount(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
         return formatter.string(from: amount as NSNumber) ?? "0"
     }
-    
+
     private func updateTransaction() async {
         validationErrors = []
         focusedField = nil
-        
+
         guard let amountDecimal = Decimal(string: amount), amountDecimal > 0 else {
             validationErrors.append(.invalidAmount)
             return
         }
-        
+
         if transactionType == .expense {
             guard selectedCategory != nil else {
                 validationErrors.append(.missingCategory)
                 return
             }
         }
-        
+
         let category = transactionType == .income
-            ? Category(name: "Income", icon: "dollarsign.circle.fill", color: .green)
+            ? Category.income
             : selectedCategory!
-        
+
         let updatedTransaction = Transaction(
             id: transaction.id,
             amount: amountDecimal,
@@ -485,17 +404,22 @@ struct EditTransactionView: View {
             createdAt: transaction.createdAt,
             updatedAt: Date()
         )
-        
+
         let validationResult = TransactionValidator.validate(updatedTransaction)
         if !validationResult.isValid {
             validationErrors = validationResult.errors
             return
         }
-        
+
         isSaving = true
-        
+
         do {
             try await transactionViewModel.updateTransaction(updatedTransaction)
+            appState.showToast(
+                message: "Transaction updated",
+                icon: "checkmark.circle.fill",
+                color: Color.accentColor
+            )
             dismiss()
         } catch {
             print("Error updating transaction: \(error)")

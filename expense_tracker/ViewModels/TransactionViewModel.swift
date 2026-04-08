@@ -146,7 +146,7 @@ class TransactionViewModel: ObservableObject {
         let components = calendar.dateComponents([.year, .month], from: month)
         
         guard let startOfMonth = calendar.date(from: components),
-              let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth) else {
+              let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, second: -1), to: startOfMonth) else {
             return MonthlySummary(month: month)
         }
         
@@ -158,8 +158,8 @@ class TransactionViewModel: ObservableObject {
         // Calculate totals
         var totalIncome: Decimal = 0
         var totalExpenses: Decimal = 0
-        var categoryBreakdown: [Category: Decimal] = [:]
-        
+        var categoryBreakdown: [UUID: Decimal] = [:]
+
         for transaction in monthTransactions {
             switch transaction.type {
             case .income:
@@ -167,11 +167,11 @@ class TransactionViewModel: ObservableObject {
             case .expense:
                 totalExpenses += transaction.amount
             }
-            
+
             // Update category breakdown (expenses only)
             if transaction.type == .expense {
-                let currentAmount = categoryBreakdown[transaction.category] ?? 0
-                categoryBreakdown[transaction.category] = currentAmount + transaction.amount
+                let catID = transaction.category.id
+                categoryBreakdown[catID] = (categoryBreakdown[catID] ?? 0) + transaction.amount
             }
         }
         
@@ -237,7 +237,18 @@ class TransactionViewModel: ObservableObject {
               let color = CategoryColor(rawValue: colorString) else {
             return nil
         }
-        
+
+        // For predefined (non-custom) categories, always return the fixed-UUID version
+        // so filter comparisons work even if Core Data stored an old random UUID.
+        if !entity.isCustom {
+            if let predefined = Category.predefined.first(where: { $0.name == name }) {
+                return predefined
+            }
+            if name == Category.income.name {
+                return Category.income
+            }
+        }
+
         return Category(
             id: id,
             name: name,

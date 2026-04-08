@@ -11,6 +11,8 @@ struct MainTabView: View {
     // MARK: - State
     
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var transactionViewModel: TransactionViewModel
+    @EnvironmentObject private var categoryViewModel: CategoryViewModel
     @State private var selectedTab: Int = 0
     @State private var showAddTransaction: Bool = false
 
@@ -60,7 +62,11 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showAddTransaction) {
             AddTransactionView()
+                .environmentObject(transactionViewModel)
+                .environmentObject(categoryViewModel)
+                .environmentObject(appState)
         }
+        .homeToast()
     }
 }
 

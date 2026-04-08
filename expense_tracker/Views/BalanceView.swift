@@ -14,7 +14,7 @@ struct BalanceView: View {
         NavigationView {
             ZStack {
                 // Dark background
-                Color(red: 0.05, green: 0.05, blue: 0.05)
+                Color.appBackground
                     .ignoresSafeArea()
                 
                 // Stats content

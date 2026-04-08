@@ -414,11 +414,11 @@ struct MetallicCardView: View {
     private func formatCurrency(_ value: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
+        formatter.currencyCode = "INR"
         formatter.maximumFractionDigits = 2
-        
+
         let nsDecimal = value as NSDecimalNumber
-        return formatter.string(from: nsDecimal) ?? "$0.00"
+        return formatter.string(from: nsDecimal) ?? "₹0.00"
     }
 }
 
