@@ -111,7 +111,7 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/<your-username>/expense-tracker.git
+   git clone [https://github.com/<your-username>/expense-tracker.git](https://github.com/silentstone00/swiftui-expenseTracker.git)
    cd expense-tracker
    ```
 
