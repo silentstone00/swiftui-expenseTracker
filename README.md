@@ -4,6 +4,7 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 - Although React Native is preferred, I have developed my app using SwiftUI because it is faster and efficient options for **iOS development**.
 - Would love to considered for this position. Thank You :)
+- Theme Color and Glass Look on transaction row is inspired from TUF+ Dashboard.
 
 ---
 
@@ -11,13 +12,29 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 > Add screenshots below by dragging images into this section on GitHub, or replace the placeholders with your actual file paths.
 
-| Home                          | Add Transaction                         | Statistics                      |
-| ----------------------------- | --------------------------------------- | ------------------------------- |
-| ![Home](screenshots/home.png) | ![Add](screenshots/add_transaction.png) | ![Stats](screenshots/stats.png) |
-
-| All Transactions                                  | Profile                             | Category Filter                   |
-| ------------------------------------------------- | ----------------------------------- | --------------------------------- |
-| ![Transactions](screenshots/all_transactions.png) | ![Profile](screenshots/profile.png) | ![Filter](screenshots/filter.png) |
+<table>
+  <tr>
+    <td><img src="sc/app1.PNG" width="150"/></td>
+    <td><img src="sc/app2.PNG" width="150"/></td>
+    <td><img src="sc/app3.PNG" width="150"/></td>
+    <td><img src="sc/app4.PNG" width="150"/></td>
+    <td><img src="sc/app5.PNG" width="150"/></td>
+  </tr>
+  <tr>
+    <td><img src="sc/app6.PNG" width="150"/></td>
+    <td><img src="sc/app7.PNG" width="150"/></td>
+    <td><img src="sc/app8.PNG" width="150"/></td>
+    <td><img src="sc/app9.PNG" width="150"/></td>
+    <td><img src="sc/app10.PNG" width="150"/></td>
+  </tr>
+  <tr>
+    <td><img src="sc/app11.PNG" width="150"/></td>
+    <td><img src="sc/app12.PNG" width="150"/></td>
+    <td><img src="sc/app13.PNG" width="150"/></td>
+    <td><img src="sc/app14.PNG" width="150"/></td>
+    <td><img src="sc/app15.PNG" width="150"/></td>
+  </tr>
+</table>
 
 ---
 
