@@ -208,7 +208,7 @@ struct AllTransactionsView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        SmartEmptyState(type: selectedFilters.isEmpty ? .noTransactions : .noFilteredTransactions)
+        SmartEmptyState(type: selectedFilters.isEmpty ? .noTransactions : .noFilteredTransactions, style: .centered)
     }
 }
 

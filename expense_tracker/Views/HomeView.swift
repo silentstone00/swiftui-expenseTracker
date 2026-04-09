@@ -87,7 +87,7 @@ struct HomeView: View {
             
             if recentTransactions.isEmpty {
                 SmartEmptyState(type: .noTransactions)
-                    .frame(height: 300)
+                    .padding(.horizontal, 20)
             } else {
                 ForEach(Array(recentTransactions.enumerated()), id: \.element.id) { index, transaction in
                     TransactionRow(

@@ -138,7 +138,7 @@ struct StatsView: View {
             Color.appBackground.ignoresSafeArea()
 
             if viewModel.transactions.isEmpty {
-                SmartEmptyState(type: .noStats)
+                SmartEmptyState(type: .noStats, style: .centered)
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
