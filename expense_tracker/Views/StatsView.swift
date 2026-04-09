@@ -364,7 +364,7 @@ struct StatsView: View {
 
     private var currentMonthName: String {
         let fmt = DateFormatter()
-        fmt.dateFormat = "MMMM yyyy"
+        fmt.dateFormat = "MMMM"  // Only month name, no year
         return fmt.string(from: Date())
     }
 
@@ -387,17 +387,13 @@ struct StatsView: View {
             }
         }) {
             HStack(spacing: 10) {
-                ZStack {
+                if isGenerating {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .tint(.primaryText)
                         .scaleEffect(0.85)
-                        .opacity(isGenerating ? 1 : 0)
-                    Image(systemName: "tablecells.fill")
-                        .font(.system(size: 15, weight: .medium))
-                        .opacity(isGenerating ? 0 : 1)
+                        .frame(width: 18, height: 18)
                 }
-                .frame(width: 18, height: 18)
 
                 Text(isGenerating ? "Generating…" : "Generate \(currentMonthName) Report")
                     .font(.subheadline)
