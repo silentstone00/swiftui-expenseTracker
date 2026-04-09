@@ -11,7 +11,7 @@ struct BalanceView: View {
     @EnvironmentObject private var transactionViewModel: TransactionViewModel
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Dark background
                 Color.appBackground

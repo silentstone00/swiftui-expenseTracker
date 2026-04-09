@@ -41,15 +41,14 @@ struct AddCategorySheet: View {
                 Color.appBackground.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 28) {
+                    VStack(spacing: 24) {
                         previewCard
                         nameSection
                         colorSection
                         iconSection
                         saveButton
                     }
-                    .padding()
-                    .padding(.bottom, 20)
+                    .padding(20)
                 }
             }
             .navigationTitle("New Category")
@@ -115,26 +114,27 @@ struct AddCategorySheet: View {
                 .fontWeight(.medium)
                 .foregroundColor(.primaryText)
 
-            HStack(spacing: 14) {
-                ForEach(CategoryColor.allCases, id: \.self) { color in
-                    Button(action: {
-                        withAnimation(.spring(response: 0.2)) { selectedColor = color }
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(color.color)
-                                .frame(width: 36, height: 36)
-                            if selectedColor == color {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(CategoryColor.allCases, id: \.self) { color in
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2)) { selectedColor = color }
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(color.color)
+                                    .frame(width: 40, height: 40)
+                                if selectedColor == color {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
                             }
                         }
-                        .scaleEffect(selectedColor == color ? 1.15 : 1.0)
-                        .animation(.spring(response: 0.2), value: selectedColor == color)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.vertical, 2)
             }
         }
     }
@@ -146,33 +146,23 @@ struct AddCategorySheet: View {
                 .fontWeight(.medium)
                 .foregroundColor(.primaryText)
 
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 6),
-                spacing: 12
-            ) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
                 ForEach(iconOptions, id: \.self) { icon in
                     Button(action: {
-                        withAnimation(.spring(response: 0.2)) { selectedIcon = icon }
+                        selectedIcon = icon
                     }) {
                         ZStack {
                             Circle()
-                                .fill(selectedIcon == icon
-                                    ? selectedColor.color.opacity(0.2)
-                                    : Color.elevatedBackground)
+                                .fill(selectedIcon == icon ? selectedColor.color.opacity(0.2) : Color.elevatedBackground)
                                 .frame(width: 48, height: 48)
                                 .overlay(
                                     Circle()
-                                        .strokeBorder(
-                                            selectedIcon == icon ? selectedColor.color : Color.clear,
-                                            lineWidth: 2
-                                        )
+                                        .strokeBorder(selectedIcon == icon ? selectedColor.color : Color.clear, lineWidth: 2)
                                 )
                             Image(systemName: icon)
-                                .font(.system(size: 19))
+                                .font(.system(size: 20))
                                 .foregroundColor(selectedIcon == icon ? selectedColor.color : .secondaryText)
                         }
-                        .scaleEffect(selectedIcon == icon ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.2), value: selectedIcon == icon)
                     }
                     .buttonStyle(.plain)
                 }

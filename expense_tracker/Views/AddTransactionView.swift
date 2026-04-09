@@ -39,7 +39,7 @@ struct AddTransactionView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.appBackground.ignoresSafeArea()
 

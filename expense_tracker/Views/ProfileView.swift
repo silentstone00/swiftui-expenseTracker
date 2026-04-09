@@ -11,7 +11,7 @@ struct ProfileView: View {
     @EnvironmentObject private var themeViewModel: ThemeViewModel
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.appBackground.ignoresSafeArea()
 
