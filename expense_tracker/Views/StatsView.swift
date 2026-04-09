@@ -159,23 +159,6 @@ struct StatsView: View {
                     }
                     .padding(.bottom, 110)
                 }
-                .gesture(
-                    DragGesture(minimumDistance: 40, coordinateSpace: .local)
-                        .onEnded { value in
-                            // Only respond to clearly horizontal swipes
-                            guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                if value.translation.width < 0 {
-                                    // Swipe left → Month
-                                    selectedPeriod = .monthly
-                                } else {
-                                    // Swipe right → Week
-                                    selectedPeriod = .weekly
-                                }
-                            }
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
-                )
             }
         }
         .sheet(isPresented: $showCSVShare) {
