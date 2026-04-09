@@ -2,6 +2,8 @@
 
 A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Data. Track your income and expenses, visualise spending by category, and generate monthly CSV reports — all stored locally on device.
 
+- Although React Native is preferred, I have developed my app using SwiftUI because it is faster and efficient options for **iOS development**.
+- Would love to considered for this position. Thank You :) 
 ---
 
 ## Screenshots
@@ -73,35 +75,6 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 ---
 
-## Project Structure
-
-```
-expense_tracker/
-├── Models/
-│   └── Models.swift              # Transaction, Category, MonthlySummary value types
-├── Services/
-│   └── DataManager.swift         # Core Data CRUD operations
-├── ViewModels/
-│   ├── TransactionViewModel.swift
-│   └── CategoryViewModel.swift
-├── Views/
-│   ├── HomeView.swift            # Balance card + recent transactions
-│   ├── StatsView.swift           # Charts, top categories, trend, CSV export
-│   ├── BalanceView.swift         # Monthly balance detail
-│   ├── ProfileView.swift         # Dark/light mode, app info
-│   ├── AddTransactionView.swift
-│   ├── EditTransactionView.swift
-│   ├── AllTransactionsView.swift # Filterable full history
-│   ├── AddCategorySheet.swift    # Custom category creator
-│   ├── AllCategoriesSheet.swift  # Full category browser
-│   └── Components/               # Reusable UI components
-├── Utilities/
-│   └── AppColors.swift           # Semantic color tokens
-└── ExpenseTracker.xcdatamodeld   # Core Data schema
-```
-
----
-
 ## Setup Instructions
 
 ### Requirements
@@ -137,17 +110,3 @@ expense_tracker/
 
 ### First Launch
 The app starts with no data. All predefined categories are available immediately — no setup required. Custom categories can be added from the Add Transaction screen.
-
----
-
-## CSV Report
-
-Tap **Generate [Month] Report** on the Statistics (Balance) tab to export a CSV of the current month's transactions. The file is shared via the system share sheet and can be saved to Files, emailed, or sent via AirDrop.
-
-CSV columns: `Date, Category, Type, Amount, Note`
-
----
-
-## License
-
-This project was built as part of a Finance Manager assignment. All rights reserved.
