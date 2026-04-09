@@ -10,8 +10,6 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 ## Screenshots
 
-> Add screenshots below by dragging images into this section on GitHub, or replace the placeholders with your actual file paths.
-
 <p align="center">
   <img src="sc/app1.PNG" width="18%"/>
   <img src="sc/app2.PNG" width="18%"/>
