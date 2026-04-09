@@ -12,29 +12,12 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 > Add screenshots below by dragging images into this section on GitHub, or replace the placeholders with your actual file paths.
 
-<table>
-  <tr>
-    <td><img src="sc/app1.PNG" width="150"/></td>
-    <td><img src="sc/app2.PNG" width="150"/></td>
-    <td><img src="sc/app3.PNG" width="150"/></td>
-    <td><img src="sc/app4.PNG" width="150"/></td>
-    <td><img src="sc/app5.PNG" width="150"/></td>
-  </tr>
-  <tr>
-    <td><img src="sc/app6.PNG" width="150"/></td>
-    <td><img src="sc/app7.PNG" width="150"/></td>
-    <td><img src="sc/app8.PNG" width="150"/></td>
-    <td><img src="sc/app9.PNG" width="150"/></td>
-    <td><img src="sc/app10.PNG" width="150"/></td>
-  </tr>
-  <tr>
-    <td><img src="sc/app11.PNG" width="150"/></td>
-    <td><img src="sc/app12.PNG" width="150"/></td>
-    <td><img src="sc/app13.PNG" width="150"/></td>
-    <td><img src="sc/app14.PNG" width="150"/></td>
-    <td><img src="sc/app15.PNG" width="150"/></td>
-  </tr>
-</table>
+<img src="sc/app1.PNG" width="150"/> <img src="sc/app2.PNG" width="150"/> <img src="sc/app3.PNG" width="150"/> <img src="sc/app4.PNG" width="150"/> <img src="sc/app5.PNG" width="150"/>
+
+<img src="sc/app6.PNG" width="150"/> <img src="sc/app7.PNG" width="150"/> <img src="sc/app8.PNG" width="150"/> <img src="sc/app9.PNG" width="150"/> <img src="sc/app10.PNG" width="150"/>
+
+<img src="sc/app11.PNG" width="150"/> <img src="sc/app12.PNG" width="150"/> <img src="sc/app13.PNG" width="150"/> <img src="sc/app14.PNG" width="150"/> <img src="sc/app15.PNG" width="150"/>
+
 
 ---
 
