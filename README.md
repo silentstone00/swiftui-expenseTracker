@@ -1,4 +1,4 @@
-# Expense Tracker — Finance Manager
+<img width="415" height="619" alt="image" src="https://github.com/user-attachments/assets/969626fd-eb17-4cd1-99c5-93fe5b3f6b95" /># Expense Tracker — Finance Manager
 
 A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Data. Track your income and expenses, visualise spending by category, and generate monthly CSV reports — all stored locally on device.
 
@@ -12,11 +12,29 @@ A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Da
 
 > Add screenshots below by dragging images into this section on GitHub, or replace the placeholders with your actual file paths.
 
-<img src="sc/app1.PNG" width="150"/> <img src="sc/app2.PNG" width="150"/> <img src="sc/app3.PNG" width="150"/> <img src="sc/app4.PNG" width="150"/> <img src="sc/app5.PNG" width="150"/>
+<p align="center">
+  <img src="sc/app1.PNG" width="18%"/>
+  <img src="sc/app2.PNG" width="18%"/>
+  <img src="sc/app3.PNG" width="18%"/>
+  <img src="sc/app4.PNG" width="18%"/>
+  <img src="sc/app5.PNG" width="18%"/>
+</p>
 
-<img src="sc/app6.PNG" width="150"/> <img src="sc/app7.PNG" width="150"/> <img src="sc/app8.PNG" width="150"/> <img src="sc/app9.PNG" width="150"/> <img src="sc/app10.PNG" width="150"/>
+<p align="center">
+  <img src="sc/app6.PNG" width="18%"/>
+  <img src="sc/app7.PNG" width="18%"/>
+  <img src="sc/app8.PNG" width="18%"/>
+  <img src="sc/app9.PNG" width="18%"/>
+  <img src="sc/app10.PNG" width="18%"/>
+</p>
 
-<img src="sc/app11.PNG" width="150"/> <img src="sc/app12.PNG" width="150"/> <img src="sc/app13.PNG" width="150"/> <img src="sc/app14.PNG" width="150"/> <img src="sc/app15.PNG" width="150"/>
+<p align="center">
+  <img src="sc/app11.PNG" width="18%"/>
+  <img src="sc/app12.PNG" width="18%"/>
+  <img src="sc/app13.PNG" width="18%"/>
+  <img src="sc/app14.PNG" width="18%"/>
+  <img src="sc/app15.PNG" width="18%"/>
+</p>
 
 
 ---
