@@ -1,4 +1,4 @@
-<img width="415" height="619" alt="image" src="https://github.com/user-attachments/assets/969626fd-eb17-4cd1-99c5-93fe5b3f6b95" /># Expense Tracker — Finance Manager
+# Expense Tracker — Finance Manager
 
 A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Data. Track your income and expenses, visualise spending by category, and generate monthly CSV reports — all stored locally on device.
 
