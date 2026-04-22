@@ -2,10 +2,7 @@
 
 A clean, modern fintech-style iOS expense tracker built with SwiftUI and Core Data. Track your income and expenses, visualise spending by category, and generate monthly CSV reports — all stored locally on device.
 
-- Although React Native is preferred, I have developed my app using SwiftUI because it is faster and efficient options for **iOS development**.
-- Uploaded for TestFlight External Testing (will take some time to get approved and publicly available): [TestFlight Link](https://testflight.apple.com/join/dz6UQTHs)
-- Would love to considered for this position. Thank You :)
-- Theme Color and Glass Look on transaction row is inspired from TUF+ Dashboard.
+- Uploaded for TestFlight External Testing : [TestFlight Link](https://testflight.apple.com/join/dz6UQTHs)
 
 ---
 
